@@ -24,7 +24,7 @@ from src.rec.dataloader import create_dataloaders
 from src.rec.val import validate_epoch
 
 
-def train_epoch(model: nn.Module, dataloader, criterion, optimizer, scaler, device: str, epoch: int) -> float:
+def train_epoch(model: nn.Module, dataloader, criterion, optimizer, scaler, scheduler, device: str, epoch: int) -> float:
     """
     Train for one epoch
     
@@ -33,6 +33,8 @@ def train_epoch(model: nn.Module, dataloader, criterion, optimizer, scaler, devi
         dataloader: Training dataloader
         criterion: Loss function (CTCLoss)
         optimizer: Optimizer
+        scaler: GradScaler
+        scheduler: LR Scheduler
         device: Device to run on
         epoch: Current epoch number
     
@@ -68,8 +70,16 @@ def train_epoch(model: nn.Module, dataloader, criterion, optimizer, scaler, devi
         scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
         
+        # Check scale before step
+        old_scale = scaler.get_scale()
         scaler.step(optimizer)
         scaler.update()
+        new_scale = scaler.get_scale()
+        
+        # Only step scheduler if optimizer step was successful (scale didn't decrease)
+        # If scale decreased, it means gradients were inf/nan and step was skipped
+        if new_scale >= old_scale:
+            scheduler.step()
         
         # Update metrics
         total_loss += loss.item()
@@ -165,13 +175,12 @@ def main():
     
     for epoch in range(start_epoch, args.epochs):
         # Train
-        train_loss = train_epoch(model, train_loader, criterion, optimizer, scaler, device, epoch + 1)
+        train_loss = train_epoch(model, train_loader, criterion, optimizer, scaler, scheduler, device, epoch + 1)
         
         # Validate
         val_loss, val_metrics = validate_epoch(model, val_loader, criterion, device)
         
         # Update scheduler
-        scheduler.step()
         current_lr = optimizer.param_groups[0]['lr']
         
         # Print metrics (after tqdm is cleared)
