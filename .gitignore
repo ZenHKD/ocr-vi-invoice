@@ -12,5 +12,5 @@ weights/det/checkpoint_epoch_*.pth
 weights/rec/best_model.pth
 weights/rec/checkpoint_epoch_*.pth
 
-
+tests/*
 
