@@ -51,7 +51,7 @@ class RecognitionDataset(Dataset):
     def __len__(self):
         return len(self.samples)
     
-    def resize_pad(self, image):
+    def resize_pad(self, image, min_width=0):
         """Resize with fixed height and variable width (maintaining aspect ratio)"""
         h, w = image.shape[:2]
         target_h, target_w = self.img_size  # (32, 128) - 128 is just a base/max reference now
@@ -62,6 +62,13 @@ class RecognitionDataset(Dataset):
         if new_w % 4 != 0:
             new_w = ((new_w // 4) + 1) * 4
         
+        # Enforce minimum width if specified (for CTC stability)
+        if new_w < min_width:
+            new_w = min_width
+            # Ensure divisibility by 4
+            if new_w % 4 != 0:
+                new_w = ((new_w // 4) + 1) * 4
+
         # Resize
         image = cv2.resize(image, (new_w, new_h))
         
@@ -94,12 +101,17 @@ class RecognitionDataset(Dataset):
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
-        # Resize (variable width)
-        image_tensor = self.resize_pad(image)
-        
-        # Encode text
+        # Encode text first to determine minimum required width
         target = self.tokenizer.encode([text])[0]
-        target_length = len(text)
+        # Use length of ENCODED target, not original text
+        target_length = len(target)
+        
+        # Minimum width required by CTC (input_length >= target_length)
+        # downsample factor is 4, so width must be at least 4 * target_length
+        min_width = target_length * 4
+        
+        # Resize (variable width) with constraint
+        image_tensor = self.resize_pad(image, min_width=min_width)
         
         return {
             'image': image_tensor,

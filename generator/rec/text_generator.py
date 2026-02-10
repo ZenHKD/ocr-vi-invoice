@@ -40,7 +40,7 @@ class TextGenerator:
         language: str = "en",
         count: int = -1,  # -1 for infinite
         fonts: List[str] = None,  # List of font paths, None for default
-        blur: int = 0,
+        blur: int = 1,
         random_blur: bool = True,
         background_type: int = 0,  # 0: Gaussian Noise, 1: Plain White, 2: Quasicrystal, 3: Image
         distorsion_type: int = 0,  # 0: None, 1: Sine wave, 2: Cosine wave, 3: Random (light noise)
@@ -195,7 +195,7 @@ class TextGenerator:
         """
         Generates a list of random amount strings with various currency symbols and formats.
         """
-        currencies = ["$", "€", "£", "¥", "VNĐ", "USD", "EUR", "đ", "₫"]
+        currencies = ["$", "€", "£", "¥", "VNĐ", "USD", "EUR", "đ", "₫", ""]
         amounts = []
         
         for _ in range(count):
@@ -294,3 +294,15 @@ class TextGenerator:
                 # Random alphanumeric string
                 codes.append("".join(random.choices(chars, k=length)))
         return codes
+
+    def generate_empty_strings(self, count: int = 100):
+        """
+        Generate empty strings for testing or special cases.
+
+        Args:
+            count (int): Number of empty strings to generate
+
+        Returns:
+            list: List of empty strings
+        """
+        return [" " for _ in range(count)]

@@ -34,6 +34,7 @@ if project_root not in sys.path:
 
 from generator.rec.text_generator import TextGenerator
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Generate synthetic text recognition dataset",
@@ -49,7 +50,6 @@ Examples:
 Text Types Generated:
     - Dates (various formats)
     - Amounts (currency values)
-    - Random alphanumeric with Vietnamese characters
     - English sentences
     - Vietnamese sentences (with and without diacritics)
     - Numbers (phone, account, codes)
@@ -59,15 +59,32 @@ Text Types Generated:
 
     parser.add_argument("-n", "--num", type=int, default=1000, help="Total number of samples")
     parser.add_argument("-o", "--output", type=str, default="data", help="Output directory")
-    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress progress output")
     parser.add_argument("--seed", type=int, default=None, help="Random seed")
-    parser.add_argument("--train-ratio", type=float, default=0.9, help="Train/val split ratio (default: 0.9)")
 
     args = parser.parse_args()
 
     if args.seed is not None:
         random.seed(args.seed)
         print(f"Using random seed: {args.seed}")
+
+    # Define text generation tasks with their proportions (must sum to 1.0)
+    text_types = [
+        ("generate_vietnamese_strings", "vietnamese", 0.40), 
+        ("generate_english_strings", "english", 0.20),
+        ("generate_amount_strings", "amount", 0.15),
+        ("generate_number_strings", "number", 0.15),
+
+        ("generate_date_strings", "date", 0.04),
+        ("generate_code_strings", "code", 0.05),
+
+        ("generate_empty_strings", "empty", 0.005),
+        ("generate_random_strings", "random", 0.005)
+    ]
+
+    # Validate proportions sum to 1.0
+    total_proportion = sum(proportion for _, _, proportion in text_types)
+    if abs(total_proportion - 1.0) > 0.001:
+        raise ValueError(f"Proportions must sum to 1.0, got {total_proportion}")
 
     # Setup output directories
     train_dir = os.path.join(args.output, "train_rec")
@@ -76,43 +93,31 @@ Text Types Generated:
     Path(train_dir).mkdir(parents=True, exist_ok=True)
     Path(val_dir).mkdir(parents=True, exist_ok=True)
 
-    if not args.quiet:
-        print("=" * 50)
-        print("SYNTHETIC TEXT GENERATOR")
-        print("=" * 50)
-        print(f"  Samples:      {args.num}")
-        print(f"  Output:       {args.output}")
-        print(f"  Train dir:    {train_dir}")
-        print(f"  Val dir:      {val_dir}")
-        print(f"  Train ratio:  {args.train_ratio}")
-        print("=" * 50)
-        print()
+    print("=" * 50)
+    print("SYNTHETIC TEXT GENERATOR")
+    print("=" * 50)
+    print(f"  Samples:      {args.num}")
+    print(f"  Output:       {args.output}")
+    print(f"  Train dir:    {train_dir}")
+    print(f"  Val dir:      {val_dir}")
+    print("-" * 50)
+    print("Type proportions:")
+    for _, text_type, proportion in text_types:
+        count = int(args.num * proportion)
+        print(f"  {text_type:12s}: {proportion:.1%} ({count} samples)")
+    print("=" * 50)
+    print()
 
     # Initialize generator
-    tg = TextGenerator(alignment=1)
-
-    # Define text generation tasks
-    text_types = [
-        ("generate_date_strings", "date"),
-        ("generate_amount_strings", "amount"),
-        ("generate_random_strings", "random"),
-        ("generate_english_strings", "english"),
-        ("generate_vietnamese_strings", "vietnamese"),
-        ("generate_number_strings", "number"),
-        ("generate_code_strings", "code"),
-    ]
-    
-    # Distribute samples across text types
-    num_types = len(text_types)
-    samples_per_type = args.num // num_types
-    train_samples_per_type = int(samples_per_type * args.train_ratio)
-    val_samples_per_type = samples_per_type - train_samples_per_type
-    
-    if not args.quiet:
-        print(f"Samples per type: {samples_per_type}")
-        print(f"  Train: {train_samples_per_type}")
-        print(f"  Val:   {val_samples_per_type}")
-        print()
+    tg = TextGenerator(
+        alignment=1,
+        blur=1,               
+        random_blur=True,      
+        background_type=0,     # Gaussian noise
+        distorsion_type=1,     # Sine wave
+        distorsion_orientation=0,
+        text_color="#282828"   # Gray Black
+    )
 
     start_time = time.time()
     
@@ -121,17 +126,21 @@ Text Types Generated:
     sample_id = 0
     
     # Generate for each text type
-    for method_name, text_type in text_types:
-        if not args.quiet:
-            print(f"Generating {text_type}...")
+    for method_name, text_type, proportion in text_types:
+        type_count = int(args.num * proportion)
+        # 90/10 train/val split for each type
+        train_count = int(type_count * 0.9)
+        val_count = type_count - train_count
+        
+        print(f"Generating {text_type} ({type_count} total, {train_count} train, {val_count} val)...")
         
         method = getattr(tg, method_name)
         
         # Generate train samples
-        train_strings = method(count=train_samples_per_type)
+        train_strings = method(count=train_count)
         train_gen = tg.generate(train_strings)
         
-        for img, lbl in tqdm(train_gen, total=train_samples_per_type, desc=f"  Train {text_type}", disable=args.quiet):
+        for img, lbl in tqdm(train_gen, total=train_count, desc=f"  Train {text_type}"):
             if img.mode != "RGB":
                 img = img.convert("RGB")
             
@@ -142,10 +151,10 @@ Text Types Generated:
             sample_id += 1
         
         # Generate val samples
-        val_strings = method(count=val_samples_per_type)
+        val_strings = method(count=val_count)
         val_gen = tg.generate(val_strings)
         
-        for img, lbl in tqdm(val_gen, total=val_samples_per_type, desc=f"  Val   {text_type}", disable=args.quiet):
+        for img, lbl in tqdm(val_gen, total=val_count, desc=f"  Val   {text_type}"):
             if img.mode != "RGB":
                 img = img.convert("RGB")
             
@@ -170,15 +179,15 @@ Text Types Generated:
         writer.writerow(['filename', 'text'])
         writer.writerows(val_labels)
 
-    if not args.quiet:
-        print()
-        print("=" * 50)
-        print(f"SUCCESS: Generated {sample_id} samples in {elapsed:.2f}s")
-        print("=" * 50)
-        print(f"\nTrain samples: {len(train_labels)}")
-        print(f"Val samples:   {len(val_labels)}")
+    print()
+    print("=" * 50)
+    print(f"SUCCESS: Generated {sample_id} samples in {elapsed:.2f}s")
+    print("=" * 50)
+    print(f"\nTrain samples: {len(train_labels)}")
+    print(f"Val samples:   {len(val_labels)}")
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

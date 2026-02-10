@@ -126,9 +126,9 @@ def main():
     parser = argparse.ArgumentParser(description='Validate SVTR-CTC model')
     parser.add_argument('--checkpoint', type=str, required=True, help='Path to model checkpoint')
     parser.add_argument('--val_dir', type=str, default='data/val_rec', help='Validation data directory')
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=64, help='Batch size')
     parser.add_argument('--img_height', type=int, default=32, help='Image height')
-    parser.add_argument('--img_width', type=int, default=384, help='Image width')
+    parser.add_argument('--img_width', type=int, default=128, help='Image width')
     args = parser.parse_args()
     
     # Device
