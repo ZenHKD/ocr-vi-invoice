@@ -1,5 +1,5 @@
 """
-AI-Powered Document Scanner
+Document Scanner
 Integrates 'rembg' (U-2-Net) for robust background removal and document detection.
 """
 
@@ -197,7 +197,7 @@ def preprocess_image(image_path_or_array, enhance=False):
 
 def visualize_pipeline(original, mask, contour, ratio, result):
     """
-    Visualizes the AI mask and final result.
+    Visualizes the mask and final result.
     """
     plt.figure(figsize=(15, 5))
     
@@ -206,13 +206,13 @@ def visualize_pipeline(original, mask, contour, ratio, result):
     vis_orig = original.copy()
     cnt_scaled = (contour.reshape(4, 2) * ratio).astype(np.int32)
     cv2.drawContours(vis_orig, [cnt_scaled], -1, (0, 255, 0), 3)
-    plt.title("AI Detection")
+    plt.title("Detection")
     plt.imshow(cv2.cvtColor(vis_orig, cv2.COLOR_BGR2RGB))
     plt.axis('off')
     
-    # 2. AI Mask (What rembg sees)
+    # 2. Mask (What rembg sees)
     plt.subplot(1, 3, 2)
-    plt.title("AI Mask (Alpha Channel)")
+    plt.title("Mask (Alpha Channel)")
     plt.imshow(mask, cmap='gray')
     plt.axis('off')
     
@@ -226,7 +226,7 @@ def visualize_pipeline(original, mask, contour, ratio, result):
     plt.show()
 
 def main():
-    parser = argparse.ArgumentParser(description="AI Document Scanner (rembg + OpenCV)")
+    parser = argparse.ArgumentParser(description="Document Scanner (rembg + OpenCV)")
     parser.add_argument('--input', '-i', type=str, required=True, help='Input image path')
     parser.add_argument('--visualize', '-v', action='store_true', default=True, help='Visualize steps')
     args = parser.parse_args()

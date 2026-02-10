@@ -1,4 +1,4 @@
 from model.det.dbnet import DBNetPP
-from model.rec.svtr_ctc import SVTRCTC
+from model.rec.resnet_ctc import ResNetCTC
 
-__all__ = ['DBNetPP', 'SVTRCTC']
+__all__ = ['DBNetPP', 'ResNetCTC']

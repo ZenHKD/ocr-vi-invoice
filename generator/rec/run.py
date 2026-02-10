@@ -113,10 +113,12 @@ Text Types Generated:
         alignment=1,
         blur=1,               
         random_blur=True,      
-        background_type=0,     # Gaussian noise
-        distorsion_type=1,     # Sine wave
+        background_type=0,         # Gaussian noise
+        distorsion_type=1,         # Sine wave
         distorsion_orientation=0,
-        text_color="#282828"   # Gray Black
+        text_color="#282828",      # Gray Black
+        margins=(5, 5, 5, 5),      # Smaller margins so text fits more space
+        fit=True
     )
 
     start_time = time.time()
@@ -128,8 +130,8 @@ Text Types Generated:
     # Generate for each text type
     for method_name, text_type, proportion in text_types:
         type_count = int(args.num * proportion)
-        # 90/10 train/val split for each type
-        train_count = int(type_count * 0.9)
+        # 99/1 train/val split for each type
+        train_count = int(type_count * 0.99)
         val_count = type_count - train_count
         
         print(f"Generating {text_type} ({type_count} total, {train_count} train, {val_count} val)...")

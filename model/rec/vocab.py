@@ -9,8 +9,8 @@ consonants = "bcdđghklmnpqrstvxfjwz"
 
 # Digits and symbols
 digits = "0123456789"
-# Currency symbols (for international invoices)
-currency = "$€£¥₫"  # USD, EUR, GBP, JPY, VNĐ
+# Currency symbols 
+currency = "$₫"  # USD, VNĐ
 symbols = "!\"#%&'()*+,-./:;<=>?@[\\]^_`{|}~ "
 
 # Full vocabulary

@@ -3,10 +3,14 @@ import torch.nn as nn
 
 class CTCLoss(nn.Module):
     """
-    CTC Loss for SVTR-CTC model
+    CTC Loss for ResNet-CTC model
     
     CTC (Connectionist Temporal Classification) allows training without 
     explicit alignment between input and output sequences.
+    
+    Robustness:
+    - Handles empty targets (no label) gracefully.
+    - Uses zero_infinity=True to prevent NaN/Inf loss on impossible alignments.
     """
     def __init__(self, blank=0, pad_id=1, reduction='mean', zero_infinity=True):
         super().__init__()

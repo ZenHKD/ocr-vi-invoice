@@ -1,5 +1,5 @@
 """
-SVTR-CTC Training Script
+ResNet-CTC Training Script
 Train text recognition model with TF32 acceleration, tqdm progress, and metrics logging.
 """
 
@@ -18,7 +18,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from model.rec.svtr_ctc import SVTRCTC
+from model.rec.resnet_ctc import ResNetCTC
 from model.rec.loss import CTCLoss
 from src.rec.dataloader import create_dataloaders
 from src.rec.val import validate_epoch
@@ -29,7 +29,7 @@ def train_epoch(model: nn.Module, dataloader, criterion, optimizer, scaler, sche
     Train for one epoch
     
     Args:
-        model: SVTR-CTC model
+        model: ResNetCTC model
         dataloader: Training dataloader
         criterion: Loss function (CTCLoss)
         optimizer: Optimizer
@@ -96,14 +96,15 @@ def train_epoch(model: nn.Module, dataloader, criterion, optimizer, scaler, sche
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train SVTR-CTC text recognition model')
+    parser = argparse.ArgumentParser(description='Train ResNet-CTC text recognition model')
     parser.add_argument('--train_dir', type=str, default='data/train_rec', help='Training data directory')
     parser.add_argument('--val_dir', type=str, default='data/val_rec', help='Validation data directory')
     parser.add_argument('--epochs', type=int, default=30, help='Number of epochs')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--img_height', type=int, default=32, help='Image height')
-    parser.add_argument('--img_width', type=int, default=128, help='Image width')
+    parser.add_argument('--img_width', type=int, default=256, help='Image width')
+    parser.add_argument('--backbone', type=str, default='resnet50', choices=['resnet18', 'resnet50'], help='Backbone network')
     parser.add_argument('--num_workers', type=int, default=4, help='Number of data loading workers')
     parser.add_argument('--save_dir', type=str, default='weights/rec', help='Directory to save checkpoints')
     parser.add_argument('--resume', type=str, default=None, help='Path to checkpoint to resume from')
@@ -135,8 +136,8 @@ def main():
     print(f'Validation samples: {len(val_loader.dataset)}')
     
     # Model
-    model = SVTRCTC(img_size=(args.img_height, args.img_width)).to(device)
-    print(f'Model: SVTR-CTC')
+    model = ResNetCTC(name=args.backbone, in_channels=3).to(device)
+    print(f'Model: ResNet-CTC ({args.backbone})')
     
     # Loss and optimizer
     criterion = CTCLoss(pad_id=model.tokenizer.pad_id, zero_infinity=True)

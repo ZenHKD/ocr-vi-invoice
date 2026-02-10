@@ -1,5 +1,5 @@
 """
-SVTR-CTC DataLoader for Text Recognition
+ResNet-CTC DataLoader for Text Recognition
 Loads cropped text images with labels from labels.txt file.
 """
 
@@ -23,13 +23,14 @@ from model.rec.vocab import VOCAB
 
 
 class RecognitionDataset(Dataset):
-    """Dataset for text recognition with SVTR-CTC"""
+    """Dataset for text recognition with ResNet-CTC"""
     
-    def __init__(self, data_dir: str, img_size: Tuple[int, int] = (32, 128)):
+    def __init__(self, data_dir: str, img_size: Tuple[int, int] = (32, 256), labels_file: str = 'labels.csv'):
         """
         Args:
             data_dir: Directory containing images and labels.txt
             img_size: Target image size (height, width)
+            labels_file: Name of the labels CSV file
         """
         self.data_dir = Path(data_dir)
         self.img_size = img_size
@@ -39,9 +40,9 @@ class RecognitionDataset(Dataset):
         
         # Load labels from labels.csv
         self.samples = []
-        labels_file = self.data_dir / 'labels.csv'
+        labels_path = self.data_dir / labels_file
         
-        df = pd.read_csv(labels_file, dtype=str, keep_default_na=False)
+        df = pd.read_csv(labels_path, dtype=str, keep_default_na=False)
         self.samples = list(zip(df['filename'], df['text']))
         
         # Normalization constants (ImageNet)
@@ -51,26 +52,28 @@ class RecognitionDataset(Dataset):
     def __len__(self):
         return len(self.samples)
     
-    def resize_pad(self, image, min_width=0):
-        """Resize with fixed height and variable width (maintaining aspect ratio)"""
+    def resize_pad(self, image):
+        """Resize to fixed size (32, 256)"""
         h, w = image.shape[:2]
-        target_h, target_w = self.img_size  # (32, 128) - 128 is just a base/max reference now
+        target_h, target_w = self.img_size 
         
-        # Scale to fixed height = 32
+        # 1. Resize height to 32
         scale = target_h / h
-        new_h, new_w = int(h * scale), int(w * scale)
-        if new_w % 4 != 0:
-            new_w = ((new_w // 4) + 1) * 4
+        new_h = target_h
+        new_w = int(w * scale)
         
-        # Enforce minimum width if specified (for CTC stability)
-        if new_w < min_width:
-            new_w = min_width
-            # Ensure divisibility by 4
-            if new_w % 4 != 0:
-                new_w = ((new_w // 4) + 1) * 4
-
-        # Resize
-        image = cv2.resize(image, (new_w, new_h))
+        # 2. Check width
+        if new_w > target_w:
+            # Resize directly to target_w (32x256) - distort width
+            image = cv2.resize(image, (target_w, target_h))
+        else:
+            # Resize height, keep aspect ratio width
+            image = cv2.resize(image, (new_w, new_h))
+            # Pad width with white pixels (255)
+            pad_w = target_w - new_w
+            if pad_w > 0:
+                # Pad right side
+                image = cv2.copyMakeBorder(image, 0, 0, 0, pad_w, cv2.BORDER_CONSTANT, value=(255, 255, 255))
         
         # Convert to tensor
         img_tensor = torch.from_numpy(image.transpose(2, 0, 1)).float() / 255.0
@@ -94,24 +97,18 @@ class RecognitionDataset(Dataset):
             if image is None:
                 raise ValueError
         except Exception:
-            # Fallback or error handling
-            # Create a dummy white image if failed (to avoid crashing)
+            # Fallback
             print(f"Warning: Failed to load {img_path}")
-            image = np.ones((32, 128, 3), dtype=np.uint8) * 255
+            image = np.ones((32, 256, 3), dtype=np.uint8) * 255
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
-        # Encode text first to determine minimum required width
+        # Encode text 
         target = self.tokenizer.encode([text])[0]
-        # Use length of ENCODED target, not original text
         target_length = len(target)
         
-        # Minimum width required by CTC (input_length >= target_length)
-        # downsample factor is 4, so width must be at least 4 * target_length
-        min_width = target_length * 4
-        
-        # Resize (variable width) with constraint
-        image_tensor = self.resize_pad(image, min_width=min_width)
+        # Resize to fixed size
+        image_tensor = self.resize_pad(image)
         
         return {
             'image': image_tensor,
@@ -123,47 +120,25 @@ class RecognitionDataset(Dataset):
 
 def collate_fn(batch: List[Dict]) -> Dict[str, torch.Tensor]:
     """
-    Custom collate function to handle variable-length sequences and images
-    
-    Args:
-        batch: List of samples from dataset
-    
-    Returns:
-        Batched dictionary with padded targets and images
+    Collate function for fixed size images
     """
     texts = [item['text'] for item in batch]
     
-    # 1. Handle Images (Variable Width)
-    # Find max width in this batch
-    max_w = max(item['image'].shape[2] for item in batch)
+    # 1. Handle Images (Fixed 32x256)
+    images = torch.stack([item['image'] for item in batch])
     
-    # Ensure max_w is divisible by 4 (network stride requirements)
-    if max_w % 4 != 0:
-        max_w = ((max_w // 4) + 1) * 4
-        
-    padded_images = []
-    input_lengths = []
-    for item in batch:
-        img = item['image'] # (C, H, W)
-        c, h, w = img.shape
-        
-        # Calculate valid input length for CTC (W / 4)
-        input_lengths.append(w // 4)
-        
-        pad_w = max_w - w
-        if pad_w > 0:
-            # F.pad takes (left, right, top, bottom)
-            # Usually padding with 0 is fine for normalized images.
-            img = F.pad(img, (0, pad_w, 0, 0), value=0)
-        padded_images.append(img)
-        
-    images = torch.stack(padded_images)
-    input_lengths = torch.tensor(input_lengths, dtype=torch.long)
+    # Input length is fixed for CTC based on width
+    # ResNet with strides (2, 2), (2, 2), (2, 1), (2, 1) -> W / 4
+    # 256 / 4 = 64
+    batch_size = images.shape[0]
+    fixed_width = images.shape[3] # 256
+    input_length_val = fixed_width // 4
+    input_lengths = torch.full((batch_size,), input_length_val, dtype=torch.long)
     
     # 2. Handle Targets
     target_lengths = torch.tensor([item['target_length'] for item in batch], dtype=torch.long)
     targets_raw = [item['target'] for item in batch]
-    targets = pad_sequence(targets_raw, batch_first=True, padding_value=1) # 1 is pad_id
+    targets = pad_sequence(targets_raw, batch_first=True, padding_value=1) # 1 is pad_id assumed (check Tokenizer)
     
     return {
         'image': images,
@@ -175,8 +150,10 @@ def collate_fn(batch: List[Dict]) -> Dict[str, torch.Tensor]:
 
 
 def create_dataloaders(train_dir: str, val_dir: str, batch_size: int = 16, 
-                       img_size: Tuple[int, int] = (32, 384),
-                       num_workers: int = 4) -> Tuple[DataLoader, DataLoader]:
+                       img_size: Tuple[int, int] = (32, 256),
+                       num_workers: int = 4,
+                       train_labels_file: str = 'labels.csv',
+                       val_labels_file: str = 'labels.csv') -> Tuple[DataLoader, DataLoader]:
     """
     Create training and validation dataloaders
     
@@ -186,14 +163,16 @@ def create_dataloaders(train_dir: str, val_dir: str, batch_size: int = 16,
         batch_size: Batch size for training
         img_size: Image size (height, width)
         num_workers: Number of workers for data loading
+        train_labels_file: Labels CSV filename for training
+        val_labels_file: Labels CSV filename for validation
     
     Returns:
         train_loader, val_loader
     """
     
     # Create datasets
-    train_dataset = RecognitionDataset(train_dir, img_size=img_size)
-    val_dataset = RecognitionDataset(val_dir, img_size=img_size)
+    train_dataset = RecognitionDataset(train_dir, img_size=img_size, labels_file=train_labels_file)
+    val_dataset = RecognitionDataset(val_dir, img_size=img_size, labels_file=val_labels_file)
     
     # Create dataloaders
     train_loader = DataLoader(

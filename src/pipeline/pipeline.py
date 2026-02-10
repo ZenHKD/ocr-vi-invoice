@@ -4,7 +4,6 @@ import cv2
 import torch
 import numpy as np
 import argparse
-import time
 from pathlib import Path
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict
@@ -13,7 +12,7 @@ from typing import List, Tuple, Dict
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from model.det.dbnet import DBNetPP
-from model.rec.svtr_ctc import SVTRCTC
+from model.rec.resnet_ctc import ResNetCTC
 from src.preprocess.scanner import preprocess_image
 from src.det.test import box_score_fast, unclip, crop_image, DBPostProcessor
 
@@ -60,9 +59,9 @@ def load_detection_model(model_path: str, device: str):
     return model
 
 
-def load_recognition_model(model_path: str, device: str, img_size: Tuple[int, int] = (32, 384)):
-    """Load SVTR-CTC recognition model"""
-    model = SVTRCTC(img_size=img_size).to(device)
+def load_recognition_model(model_path: str, device: str, backbone: str = 'resnet50'):
+    """Load ResNet-CTC recognition model"""
+    model = ResNetCTC(name=backbone).to(device)
     checkpoint = torch.load(model_path, map_location=device)
     
     if 'model_state_dict' in checkpoint:
@@ -74,33 +73,44 @@ def load_recognition_model(model_path: str, device: str, img_size: Tuple[int, in
     return model
 
 
-def preprocess_for_recognition(crop: np.ndarray, img_size: Tuple[int, int] = (32, 128)) -> torch.Tensor:
+def preprocess_for_recognition(crop: np.ndarray, img_size: Tuple[int, int] = (32, 256)) -> torch.Tensor:
     """
     Preprocess cropped image for recognition model.
-    Resizes to fixed height with variable width (maintaining aspect ratio).
+    Resizes to fixed size (32, 256) using Same Logic as DataLoader:
+    1. Resize Height to 32.
+    2. If Width < 256: Pad to 256.
+    3. If Width > 256: Resize to 32x256.
     """
     h, w = crop.shape[:2]
-    target_h, target_w = img_size  # target_w is max reference
+    target_h, target_w = img_size 
     
-    # Scale to fixed height
+    # 1. Resize height to 32
     scale = target_h / h
-    new_h, new_w = int(h * scale), int(w * scale)
+    new_h = target_h
+    new_w = int(w * scale)
     
-    # Ensure width is divisible by 4 (network stride)
-    if new_w % 4 != 0:
-        new_w = ((new_w // 4) + 1) * 4
-    
-    # Resize
-    resized = cv2.resize(crop, (new_w, new_h))
-    
+    # 2. Check width
+    if new_w > target_w:
+        # Resize directly to target_w, distorting width
+        resized = cv2.resize(crop, (target_w, target_h))
+    else:
+        # Resize height, keep aspect ratio width
+        resized = cv2.resize(crop, (new_w, new_h))
+        # Pad width
+        pad_w = target_w - new_w
+        if pad_w > 0:
+            # Pad right side with 255 (white) / or 0? 
+            # Dataloader uses 255.
+            if len(resized.shape) == 2:
+                resized = cv2.copyMakeBorder(resized, 0, 0, 0, pad_w, cv2.BORDER_CONSTANT, value=255)
+            else:
+                resized = cv2.copyMakeBorder(resized, 0, 0, 0, pad_w, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+
     # Convert to RGB if needed
     if len(resized.shape) == 2:
         resized = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
     elif resized.shape[2] == 4:
         resized = cv2.cvtColor(resized, cv2.COLOR_RGBA2RGB)
-    elif resized.shape[2] == 3:
-        # Input is already RGB (from main loop)
-        pass
     
     # Normalize
     img_tensor = torch.from_numpy(resized.transpose(2, 0, 1)).float() / 255.0
@@ -113,10 +123,10 @@ def preprocess_for_recognition(crop: np.ndarray, img_size: Tuple[int, int] = (32
     return img_tensor
 
 
-def recognize_text(model: SVTRCTC, crop: np.ndarray, device: str) -> str:
+def recognize_text(model: ResNetCTC, crop: np.ndarray, device: str, img_size: Tuple[int, int] = (32, 256)) -> str:
     """Run recognition on a single cropped text image"""
     # Preprocess
-    img_tensor = preprocess_for_recognition(crop)
+    img_tensor = preprocess_for_recognition(crop, img_size=img_size)
     img_tensor = img_tensor.unsqueeze(0).to(device)  # Add batch dimension
     
     # Inference
@@ -153,7 +163,7 @@ def main():
     parser.add_argument('--det_model', type=str, required=True, 
                        help='Path to DBNet++ detection model checkpoint')
     parser.add_argument('--rec_model', type=str, required=True,
-                       help='Path to SVTR-CTC recognition model checkpoint')
+                       help='Path to ResNet-CTC recognition model checkpoint')
     
     # Input
     parser.add_argument('--image_path', type=str, required=True,
@@ -179,7 +189,7 @@ def main():
     
     # Preprocessing
     parser.add_argument('--preprocess', action='store_true',
-                       help='Use AI Document Scanner preprocessing')
+                       help='Use Document Scanner preprocessing')
     
     # Visualization
     parser.add_argument('--visualize', action='store_true',
@@ -214,8 +224,7 @@ def main():
     print(f'Loading recognition model from {args.rec_model}...')
     rec_model = load_recognition_model(
         args.rec_model, 
-        device, 
-        img_size=(args.rec_img_height, args.rec_img_width)
+        device
     )
     
     # Initialize post-processor
@@ -253,7 +262,6 @@ def main():
             continue
         
         original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-        start_time = time.time()
         
         # === STEP 1: Preprocessing (Optional) ===
         if args.preprocess:
@@ -317,7 +325,7 @@ def main():
                 continue
             
             # Recognize text
-            text = recognize_text(rec_model, crop, device)
+            text = recognize_text(rec_model, crop, device, img_size=(args.rec_img_height, args.rec_img_width))
             recognized_texts.append(text)
             print(f"        Region {i+1}: '{text}'")
         
@@ -328,9 +336,6 @@ def main():
         result_image = draw_boxes_with_text(
             original_image, rescaled_boxes, recognized_texts
         )
-        
-        elapsed = time.time() - start_time
-        print(f"\n  Total time: {elapsed:.3f}s")
         
         # Visualize final result (if requested)
         if args.visualize:

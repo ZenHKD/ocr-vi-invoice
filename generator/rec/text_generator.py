@@ -52,7 +52,7 @@ class TextGenerator:
         orientation: int = 0,
         space_width: float = 1.0,
         character_spacing: int = 0,
-        margins: Tuple[int, int, int, int] = (10, 10, 10, 10),
+        margins: Tuple[int, int, int, int] = (5, 5, 5, 5),
         fit: bool = True,
         output_mask: bool = False,
         word_split: bool = False,
@@ -75,6 +75,22 @@ class TextGenerator:
                 os.path.join(fonts_dir, "Inconsolata-Regular.ttf"),
                 os.path.join(fonts_dir, "VT323-Regular.ttf"),
             ]
+            
+            # Verify fonts exist
+            valid_fonts = []
+            print(f"Checking fonts in: {fonts_dir}")
+            for font_path in self.fonts:
+                if os.path.exists(font_path):
+                    valid_fonts.append(font_path)
+                else:
+                    print(f"  [WARNING] Font not found: {os.path.basename(font_path)}")
+            
+            if not valid_fonts:
+                print(f"  [ERROR] No valid fonts found in {fonts_dir}!")
+                print("  Please download fonts (DejaVuSans, RobotoMono, etc.) and place them in generator/rec/fonts/")
+            else:
+                print(f"  [SUCCESS] Loaded {len(valid_fonts)}/{len(self.fonts)} fonts.")
+                self.fonts = valid_fonts
         else:
             self.fonts = fonts
             
@@ -140,13 +156,13 @@ class TextGenerator:
         consonants = "bcdđghklmnpqrstvxfjwz"
         # Digits and symbols
         digits = "0123456789"
-        currency = "$€£¥₫"  # USD, EUR, GBP, JPY, VND
+        currency = "$₫"  # USD, VNĐ
         symbols = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
         
         # Combine all characters (lowercase and uppercase)
         chars = vowels + vowels.upper() + consonants + consonants.upper() + digits + currency + symbols
         alphanumeric = vowels + vowels.upper() + consonants + consonants.upper() + digits
-        
+ 
         results = []
         attempts = 0
         max_attempts = count * 10  # Prevent infinite loop
@@ -195,7 +211,7 @@ class TextGenerator:
         """
         Generates a list of random amount strings with various currency symbols and formats.
         """
-        currencies = ["$", "€", "£", "¥", "VNĐ", "USD", "EUR", "đ", "₫", ""]
+        currencies = ["$", "VNĐ", "USD", "đ", "₫", ""]
         amounts = []
         
         for _ in range(count):
