@@ -44,10 +44,14 @@
     │   ├── best_model.pth
     │   ├── checkpoint_epoch_*.pth
     │   └── training_log.csv
-    ├── rec2_aug
+    ├── rec2                    # Folder save the trained SVTRv2 model without augmentation (function `get_train_augmentation` in src/rec2/dataloader.py)
     │   ├── best_model.pth
     │   ├── checkpoint_epoch_*.pth
     │   └── training_log.csv
+    └── rec2_aug                # Folder save the trained SVTRv2 model with augmentation
+        ├── best_model.pth
+        ├── checkpoint_epoch_*.pth
+        └── training_log.csv
 ```
 
 # Data preparation
