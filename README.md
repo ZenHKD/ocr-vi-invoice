@@ -31,6 +31,9 @@
 │   │   ├── test.py
 │   │   ├── train.py
 │   │   └── val.py
+│   ├── pipeline
+│   │   ├── pipeline.ipynb      # Script to pass and check inference of all models
+│   │   └── pipeline2.py
 │   ├── preprocess              # Using U-2-Net (pre-trained) to remove background (use directly from `rembg`)
 │   │   ├── scanner.ipynb
 │   │   └── scanner.py
