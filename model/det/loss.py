@@ -7,18 +7,21 @@ class BalanceCrossEntropyLoss(nn.Module):
         self.negative_ratio = negative_ratio
         self.eps = eps
 
-    def forward(self, pred, gt, mask):
-        # pred: (N, 1, H, W)
-        # gt: (N, 1, H, W)
-        # mask: (N, 1, H, W) (training mask)
-
+    def forward(self, pred_logits, gt, mask):
+        """
+        Args:
+            pred_logits: (N, 1, H, W) — raw logits (pre-sigmoid)
+            gt: (N, 1, H, W)
+            mask: (N, 1, H, W)
+        """
         positive = (gt * mask).byte()
         negative = ((1 - gt) * mask).byte()
         positive_count = int(positive.float().sum())
         negative_count = min(int(negative.float().sum()), int(positive_count * self.negative_ratio))
- 
-        loss = nn.functional.binary_cross_entropy(pred, gt, reduction='none')
-            
+
+        # binary_cross_entropy_with_logits is AMP-safe (handles sigmoid internally)
+        loss = nn.functional.binary_cross_entropy_with_logits(pred_logits, gt, reduction='none')
+
         positive_loss = loss * positive.float()
         negative_loss = loss * negative.float()
 
@@ -33,9 +36,9 @@ class DiceLoss(nn.Module):
         self.eps = eps
 
     def forward(self, pred, gt, mask):
-        # pred: (N, 1, H, W)
+        # pred: (N, 1, H, W) — sigmoid'd probability
         # gt: (N, 1, H, W)
-        # mask: (N, 1, H, W) (ignore mask)
+        # mask: (N, 1, H, W)
 
         pred = pred.squeeze(1)
         gt = gt.squeeze(1)
@@ -65,20 +68,22 @@ class DBLoss(nn.Module):
         self.l1_loss = MaskL1Loss()
 
     def forward(self, predictions, batch):
-        # predictions: {'binary': ..., 'thresh': ..., 'thresh_binary': ...}
-        # batch: {'gt': ..., 'mask': ..., 'thresh_map': ..., 'thresh_mask': ...}
-
-        pred_binary = predictions['binary']
-        pred_thresh = predictions['thresh']
+        # predictions now includes both sigmoid'd maps and raw logits
+        pred_binary = predictions['binary']          # sigmoid'd (for dice)
+        pred_thresh = predictions['thresh']          # sigmoid'd (for L1)
         pred_thresh_binary = predictions['thresh_binary']
+        bin_logits = predictions['bin_logits']        # raw logits (for BCE)
 
         gt = batch['gt']
         mask = batch['mask']
         thresh_map = batch['thresh_map']
         thresh_mask = batch['thresh_mask']
 
-        l_probability = self.bce_loss(pred_binary, gt, mask)
+        # BCE uses raw logits (AMP-safe)
+        l_probability = self.bce_loss(bin_logits, gt, mask)
+        # L1 uses sigmoid'd threshold map
         l_thresh = self.l1_loss(pred_thresh, thresh_map, thresh_mask)
+        # Dice uses sigmoid'd binary prediction
         l_binary = self.dice_loss(pred_thresh_binary, gt, mask)
 
         loss = l_probability + self.alpha * l_binary + self.beta * l_thresh

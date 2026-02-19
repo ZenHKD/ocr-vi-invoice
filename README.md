@@ -1,23 +1,14 @@
 ```
 .
 ├── data
-│   ├── test
-│   ├── train_det
-│   ├── train_rec
-│   ├── val_det
-│   └── val_rec
 ├── generator
-│   ├── det
-│   │   ├── defects.py
-│   │   ├── edge_cases.py
-│   │   ├── generator.py
-│   │   ├── geometry.py
-│   │   ├── layouts             # 12 layouts + 1 base layout files
-│   │   └── run.py
-│   └── rec
-│       ├── fonts
-│       ├── run.py
-│       └── text_generator.py
+│   └── det
+│       ├── defects.py
+│       ├── edge_cases.py
+│       ├── generator.py
+│       ├── geometry.py
+│       ├── layouts             # 12 layouts + 1 base layout files
+│       └── run.py
 ├── model                       # Model Architecture
 │   ├── det                     # DBNet++ (Text Detection)
 │   │   ├── backbone.py
@@ -27,7 +18,7 @@
 │   │   ├── layers.py
 │   │   ├── loss.py
 │   │   ├── neck.py
-│   └── rec                     # SVTR-CTC (Text Recognition)
+│   └── rec                     # SVTRv2 (Text Recognition)
 │       ├── loss.py
 │       ├── svtr_ctc.py
 │       ├── svtr_encoder.py
@@ -44,7 +35,7 @@
 │   ├── preprocess              # Using U-2-Net (pre-trained) to remove background
 │   │   ├── scanner.ipynb
 │   │   └── scanner.py
-│   └── rec
+│   └── rec2
 │       ├── dataloader.py
 │       ├── train.py
 │       └── val.py
@@ -52,7 +43,8 @@
 └── weights
     ├── det
     │   ├── best_model.pth
-    │   ├── checkpoint_epoch_10.pth
+    │   ├── checkpoint_epoch_*.pth
     │   └── training_log.csv
-    └── rec
+    └── rec2_aug
+
 ```

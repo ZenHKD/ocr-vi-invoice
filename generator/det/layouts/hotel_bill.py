@@ -86,36 +86,58 @@ class HotelBillLayout(BaseLayout):
         items = data.get("items", [])
         total_amount = 0
 
-        for item in items:
-            desc = generate_random_text(8, 25)
-            nights = item.get("qty", random.randint(1, 7))
-            amount = item.get("total", random.randint(500000, 3000000))
-            total_amount += amount
+        # Randomly choose between bordered table and plain list
+        if random.random() < 0.45:
+            # === BORDERED TABLE ===
+            table_headers = [
+                generate_random_text(6, 12),
+                generate_random_text(3, 6),
+                generate_random_text(6, 10),
+            ]
+            col_widths = [
+                self.width - 2 * self.margin - 80 - 120,
+                80,
+                120,
+            ]
+            rows = []
+            for item in items:
+                desc = generate_random_text(8, 25)
+                nights = item.get("qty", random.randint(1, 7))
+                amount = item.get("total", random.randint(500000, 3000000))
+                total_amount += amount
+                rows.append([desc, f"({nights})", self._format_currency(amount)])
+            
+            border_style = random.choice(["full", "no_vertical", "outer_only"])
+            self._draw_table_with_borders(
+                headers=table_headers, rows=rows,
+                col_widths=col_widths, font=body_font, header_font=header_font,
+                color=black, border_color=random.choice([black, gray]),
+                draw_vertical_lines=border_style == "full",
+                draw_horizontal_lines=border_style in ("full", "outer_only"),
+            )
+        else:
+            # === PLAIN LIST (original) ===
+            for item in items:
+                desc = generate_random_text(8, 25)
+                nights = item.get("qty", random.randint(1, 7))
+                amount = item.get("total", random.randint(500000, 3000000))
+                total_amount += amount
 
-            amt_str = self._format_currency(amount)
-            amt_str = self._format_currency(amount)
-            # Separate qty (nights) for standalone detection
-            # Original: line = f"{desc} ({nights})"
-            
-            # Draw desc
-            self._draw_text(desc, self.margin, self.y_cursor, body_font, black)
-            
-            # Draw (nights) as a single polygon, but separated from desc
-            w_desc, _ = self._text_size(desc, body_font)
-            
-            # Larger gap to separate desc from quantity block
-            gap = 10 
-            curr_x = self.margin + w_desc + gap
-            
-            s_nights_block = f"({nights})"
-            self._draw_text(s_nights_block, curr_x, self.y_cursor, body_font, black)
-            tw, _ = self._text_size(amt_str, body_font)
-            self._draw_text(amt_str, self.width - self.margin - tw, self.y_cursor, body_font, black)
-            self._advance_y(font=body_font)
+                amt_str = self._format_currency(amount)
+                self._draw_text(desc, self.margin, self.y_cursor, body_font, black)
+                w_desc, _ = self._text_size(desc, body_font)
+                gap = 10 
+                curr_x = self.margin + w_desc + gap
+                s_nights_block = f"({nights})"
+                self._draw_text(s_nights_block, curr_x, self.y_cursor, body_font, black)
+                tw, _ = self._text_size(amt_str, body_font)
+                self._draw_text(amt_str, self.width - self.margin - tw, self.y_cursor, body_font, black)
+                self._advance_y(font=body_font)
 
         self._advance_y(10)
         self._draw_line(self.y_cursor, style="dashed", color=gray)
         self._advance_y(15)
+
 
         # Subtotal, service, VAT
         subtotal = data.get("subtotal", total_amount)

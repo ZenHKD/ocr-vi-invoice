@@ -1,16 +1,12 @@
 **__pycache__**
 
 data/test/*
-data/train_det/*
-data/train_rec/*
-data/val_det/*
-data/val_rec/*
 
 weights/det/best_model.pth
 weights/det/checkpoint_epoch_*.pth
 
-weights/rec/best_model.pth
-weights/rec/checkpoint_epoch_*.pth
+weights/rec_aug/best_model.pth
+weights/rec_aug/checkpoint_epoch_*.pth
 
 tests/*
 

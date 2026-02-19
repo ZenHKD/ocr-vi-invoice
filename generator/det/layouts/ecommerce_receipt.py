@@ -82,29 +82,58 @@ class EcommerceReceiptLayout(BaseLayout):
         items = data.get("items", [])
         subtotal = 0
 
-        for item in items:
-            name = generate_random_text(10, 35)
-            sku = f"{generate_random_text(2, 3).upper()}-{generate_random_number_string(6)}"
-            qty = item.get("qty", random.randint(1, 5))
-            total = item.get("total", random.randint(50000, 2000000))
-            subtotal += total
-
-            self._draw_text(name, self.margin, self.y_cursor, body_font, black)
-            self._advance_y(font=body_font)
-
-            # Merge qty and x into one polygon
-            s_qty_x = f"{qty}x"
+        # Randomly choose between bordered table and plain list
+        if random.random() < 0.45:
+            # === BORDERED TABLE ===
+            table_headers = [
+                generate_random_text(6, 12),
+                generate_random_text(3, 6),
+                generate_random_text(5, 10),
+            ]
+            col_widths = [
+                self.width - 2 * self.margin - 60 - 120,
+                60,
+                120,
+            ]
+            rows = []
+            for item in items:
+                name = generate_random_text(10, 35)
+                qty = item.get("qty", random.randint(1, 5))
+                total = item.get("total", random.randint(50000, 2000000))
+                subtotal += total
+                rows.append([name, f"{qty}x", self._format_currency(total)])
             
-            self._draw_text(s_qty_x, self.margin, self.y_cursor, small_font, gray)
-            val_str = self._format_currency(total)
-            tw, _ = self._text_size(val_str, body_font)
-            self._draw_text(val_str, self.width - self.margin - tw, self.y_cursor, body_font, black)
-            self._advance_y(font=body_font)
-            self._advance_y(5)
+            border_style = random.choice(["full", "no_vertical", "outer_only"])
+            self._draw_table_with_borders(
+                headers=table_headers, rows=rows,
+                col_widths=col_widths, font=body_font, header_font=header_font,
+                color=black, border_color=random.choice([(40, 40, 40), (140, 140, 140)]),
+                draw_vertical_lines=border_style == "full",
+                draw_horizontal_lines=border_style in ("full", "outer_only"),
+            )
+        else:
+            # === PLAIN LIST (original) ===
+            for item in items:
+                name = generate_random_text(10, 35)
+                sku = f"{generate_random_text(2, 3).upper()}-{generate_random_number_string(6)}"
+                qty = item.get("qty", random.randint(1, 5))
+                total = item.get("total", random.randint(50000, 2000000))
+                subtotal += total
+
+                self._draw_text(name, self.margin, self.y_cursor, body_font, black)
+                self._advance_y(font=body_font)
+                s_qty_x = f"{qty}x"
+                self._draw_text(s_qty_x, self.margin, self.y_cursor, small_font, gray)
+                val_str = self._format_currency(total)
+                tw, _ = self._text_size(val_str, body_font)
+                self._draw_text(val_str, self.width - self.margin - tw, self.y_cursor, body_font, black)
+                self._advance_y(font=body_font)
+                self._advance_y(5)
 
         self._advance_y(10)
         self._draw_line(self.y_cursor, style="dashed", color=gray)
         self._advance_y(15)
+
 
         # Summary
         shipping_label = generate_random_text(8, 15)

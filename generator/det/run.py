@@ -45,16 +45,16 @@ def main():
         epilog="""
 Examples:
     # Generate 100 balanced training samples
-    python -m generator.det.run --num 100 --scenario training_balanced --output data/train_det
+    python -m generator.det.run --num 10000 --scenario training_balanced --output data/train_det
 
     # Generate difficult training data
-    python -m generator.det.run --num 500 --scenario training_hard --output data/train_det
+    python -m generator.det.run --num 20000 --scenario training_hard --output data/train_det
 
     # Generate clean validation data
-    python -m generator.det.run --num 50 --scenario validation --output data/val_det
+    python -m generator.det.run --num 1000 --scenario validation --output data/val_det
 
     # Focus on edge cases for robustness testing
-    python -m generator.det.run --num 200 --scenario edge_cases_focus --output data/train_det
+    python -m generator.det.run --num 1000 --scenario edge_cases_focus --output data/val_det
 
 Available scenarios:
     training_balanced  - Balanced mix (75% normal, 15% edge cases, 10% bad)

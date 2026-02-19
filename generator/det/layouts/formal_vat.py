@@ -90,38 +90,76 @@ class FormalVATLayout(BaseLayout):
             generate_random_text(6, 12)
         ]
 
-        x = self.margin
-        for header, width in zip(headers, col_widths):
-            self._draw_text(header, x, self.y_cursor, header_font, black)
-            x += width
-        self._advance_y(font=header_font)
-
-        self._draw_line(self.y_cursor, style="solid", color=black)
-        self._advance_y(5)
+        # Randomly choose between bordered table and plain columns
+        use_bordered_table = random.random() < 0.5
 
         # Items
         items = data.get("items", [])
         subtotal = 0
 
-        for idx, item in enumerate(items):
-            desc = generate_random_text(10, 30)
-            qty = item.get("qty", random.randint(1, 10))
-            unit_price = item.get("unit", random.randint(50000, 500000))
-            total = item.get("total", qty * unit_price)
-            subtotal += total
-
+        if use_bordered_table:
+            # === BORDERED TABLE (teaches model to ignore | and _ borders) ===
+            rows = []
+            for idx, item in enumerate(items):
+                desc = generate_random_text(10, 30)
+                qty = item.get("qty", random.randint(1, 10))
+                unit_price = item.get("unit", random.randint(50000, 500000))
+                total = item.get("total", qty * unit_price)
+                subtotal += total
+                rows.append([
+                    f"{idx + 1}",
+                    desc,
+                    f"{qty}",
+                    self._format_currency(total)
+                ])
+            
+            # Randomize border style
+            border_style = random.choice(["full", "no_vertical", "no_horizontal", "outer_only"])
+            self._draw_table_with_borders(
+                headers=headers,
+                rows=rows,
+                col_widths=col_widths,
+                font=body_font,
+                header_font=header_font,
+                color=black,
+                border_color=random.choice([black, dark_gray, gray]),
+                border_width=random.choice([1, 2]),
+                draw_outer_border=border_style != "no_horizontal",
+                draw_vertical_lines=border_style in ("full", "no_horizontal"),
+                draw_horizontal_lines=border_style in ("full", "no_vertical", "outer_only"),
+            )
+            self._advance_y(10)
+        else:
+            # === PLAIN COLUMNS (original style) ===
             x = self.margin
-            self._draw_text(f"{idx + 1}", x, self.y_cursor, body_font, dark_gray)
-            x += col_widths[0]
-            self._draw_text(desc, x, self.y_cursor, body_font, black)
-            x += col_widths[1]
-            self._draw_text(f"{qty}", x, self.y_cursor, body_font, dark_gray)
-            x += col_widths[2]
-            self._draw_text(self._format_currency(total), x, self.y_cursor, body_font, black)
+            for header, width in zip(headers, col_widths):
+                self._draw_text(header, x, self.y_cursor, header_font, black)
+                x += width
+            self._advance_y(font=header_font)
 
-            self._advance_y(font=body_font)
+            self._draw_line(self.y_cursor, style="solid", color=black)
+            self._advance_y(5)
 
-        self._advance_y(10)
+            for idx, item in enumerate(items):
+                desc = generate_random_text(10, 30)
+                qty = item.get("qty", random.randint(1, 10))
+                unit_price = item.get("unit", random.randint(50000, 500000))
+                total = item.get("total", qty * unit_price)
+                subtotal += total
+
+                x = self.margin
+                self._draw_text(f"{idx + 1}", x, self.y_cursor, body_font, dark_gray)
+                x += col_widths[0]
+                self._draw_text(desc, x, self.y_cursor, body_font, black)
+                x += col_widths[1]
+                self._draw_text(f"{qty}", x, self.y_cursor, body_font, dark_gray)
+                x += col_widths[2]
+                self._draw_text(self._format_currency(total), x, self.y_cursor, body_font, black)
+
+                self._advance_y(font=body_font)
+
+            self._advance_y(10)
+
         self._draw_line(self.y_cursor, style="solid", color=black)
         self._advance_y(15)
 

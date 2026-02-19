@@ -102,25 +102,40 @@ class UtilityBillLayout(BaseLayout):
         old_label = generate_random_text(5, 12)
         new_label = generate_random_text(5, 12)
         usage_label = generate_random_text(5, 10)
-            
-        self._draw_text(f"{old_label}: {old_reading:,}", self.margin, self.y_cursor, body_font, black)
-        self._advance_y(font=body_font)
-        self._draw_text(f"{new_label}: {new_reading:,}", self.margin, self.y_cursor, body_font, black)
-        self._advance_y(font=body_font)
-        # Separate usage quantity
-        # Original: self._draw_text(f"{usage_label}: {usage:,} {unit}", self.margin, self.y_cursor, body_font, black)
-        
-        self._draw_text(f"{usage_label}:", self.margin, self.y_cursor, body_font, black)
-        w_p1, _ = self._text_size(f"{usage_label}:", body_font)
-        
-        gap = 10
-        s_usage = f"{usage:,}"
-        self._draw_text(s_usage, self.margin + w_p1 + gap, self.y_cursor, body_font, black)
-        w_u, _ = self._text_size(s_usage, body_font)
-        
-        s_unit = f"{unit}"
-        self._draw_text(s_unit, self.margin + w_p1 + gap + w_u + gap, self.y_cursor, body_font, black)
-        self._advance_y(font=body_font)
+
+        # Randomly choose bordered table for usage details
+        if random.random() < 0.4:
+            # Bordered table version
+            meter_headers = [generate_random_text(6, 12), generate_random_text(5, 10)]
+            col_w = [(self.width - 2 * self.margin) // 2] * 2
+            rows = [
+                [old_label, f"{old_reading:,}"],
+                [new_label, f"{new_reading:,}"],
+                [usage_label, f"{usage:,} {unit}"],
+            ]
+            border_style = random.choice(["full", "no_vertical"])
+            self._draw_table_with_borders(
+                headers=meter_headers, rows=rows,
+                col_widths=col_w, font=body_font, header_font=header_font,
+                color=black, border_color=gray,
+                draw_vertical_lines=border_style == "full",
+                draw_horizontal_lines=True,
+            )
+        else:
+            # Plain version (original)
+            self._draw_text(f"{old_label}: {old_reading:,}", self.margin, self.y_cursor, body_font, black)
+            self._advance_y(font=body_font)
+            self._draw_text(f"{new_label}: {new_reading:,}", self.margin, self.y_cursor, body_font, black)
+            self._advance_y(font=body_font)
+            self._draw_text(f"{usage_label}:", self.margin, self.y_cursor, body_font, black)
+            w_p1, _ = self._text_size(f"{usage_label}:", body_font)
+            gap = 10
+            s_usage = f"{usage:,}"
+            self._draw_text(s_usage, self.margin + w_p1 + gap, self.y_cursor, body_font, black)
+            w_u, _ = self._text_size(s_usage, body_font)
+            s_unit = f"{unit}"
+            self._draw_text(s_unit, self.margin + w_p1 + gap + w_u + gap, self.y_cursor, body_font, black)
+            self._advance_y(font=body_font)
 
         amount = usage * rate
         vat = int(amount * 0.1)
@@ -129,6 +144,7 @@ class UtilityBillLayout(BaseLayout):
         self._advance_y(10)
         self._draw_line(self.y_cursor, style="dashed", color=gray)
         self._advance_y(15)
+
 
         # Totals
         usage_fee_label = generate_random_text(8, 18)

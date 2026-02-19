@@ -269,6 +269,88 @@ class BaseLayout:
             self.draw.line((x1, y - 2, x2, y - 2), fill=color, width=1)
             self.draw.line((x1, y + 2, x2, y + 2), fill=color, width=1)
 
+    def _draw_table_with_borders(self, headers: List[str], rows: List[List[str]],
+                                  col_widths: List[int], font: ImageFont.FreeTypeFont,
+                                  header_font: ImageFont.FreeTypeFont = None,
+                                  color: Tuple[int, int, int] = (0, 0, 0),
+                                  border_color: Tuple[int, int, int] = (0, 0, 0),
+                                  border_width: int = 1,
+                                  cell_padding: int = 4,
+                                  draw_outer_border: bool = True,
+                                  draw_vertical_lines: bool = True,
+                                  draw_horizontal_lines: bool = True):
+        """
+        Draw a table WITH visible border lines. Borders are NOT annotated (visual only).
+        Only text cells are annotated as detection targets.
+        
+        This teaches the model that table borders (|, _, grid lines) are NOT text.
+        """
+        if header_font is None:
+            header_font = font
+        
+        x_start = self.margin
+        table_width = sum(col_widths)
+        _, row_height_ref = self._text_size("Ag", font)
+        row_height = row_height_ref + cell_padding * 2
+        
+        total_rows = 1 + len(rows)  # header + data
+        table_height = total_rows * row_height
+        
+        y_top = self.y_cursor
+        
+        # === Draw outer border (visual only, NOT annotated) ===
+        if draw_outer_border:
+            self.draw.rectangle(
+                [x_start, y_top, x_start + table_width, y_top + table_height],
+                outline=border_color, width=border_width
+            )
+        
+        # === Draw header row ===
+        x = x_start
+        for i, (header, width) in enumerate(zip(headers, col_widths)):
+            # Draw text (annotated)
+            text_x = x + cell_padding
+            text_y = y_top + cell_padding
+            self._draw_text(header, text_x, text_y, header_font, color)
+            
+            # Draw vertical line AFTER this column (visual only)
+            if draw_vertical_lines and i < len(headers) - 1:
+                self.draw.line(
+                    [x + width, y_top, x + width, y_top + table_height],
+                    fill=border_color, width=border_width
+                )
+            x += width
+        
+        # Draw horizontal line under header
+        header_bottom_y = y_top + row_height
+        if draw_horizontal_lines:
+            self.draw.line(
+                [x_start, header_bottom_y, x_start + table_width, header_bottom_y],
+                fill=border_color, width=border_width
+            )
+        
+        # === Draw data rows ===
+        for row_idx, row_data in enumerate(rows):
+            row_y = header_bottom_y + row_idx * row_height
+            
+            x = x_start
+            for col_idx, (cell_text, width) in enumerate(zip(row_data, col_widths)):
+                text_x = x + cell_padding
+                text_y = row_y + cell_padding
+                self._draw_text(cell_text, text_x, text_y, font, color, max_width=width - cell_padding * 2)
+                x += width
+            
+            # Draw horizontal line under this row (visual only)
+            if draw_horizontal_lines and row_idx < len(rows) - 1:
+                line_y = row_y + row_height
+                self.draw.line(
+                    [x_start, line_y, x_start + table_width, line_y],
+                    fill=border_color, width=border_width
+                )
+        
+        # Advance y cursor past the table
+        self.y_cursor = y_top + table_height + 5
+
     def _advance_y(self, amount: int = None, font: ImageFont.FreeTypeFont = None):
         """Advance the y cursor."""
         if amount:

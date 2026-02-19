@@ -87,29 +87,55 @@ class RestaurantBillLayout(BaseLayout):
         # === ITEMS ===
         items = data.get("items", [])
 
-        for item in items:
-            desc = generate_random_text(5, 25)
-            qty = item.get("qty", random.randint(1, 5))
-            total = item.get("total", random.randint(20000, 200000))
+        # Randomly choose between bordered table and plain list
+        if random.random() < 0.45:
+            # === BORDERED TABLE ===
+            table_headers = [
+                generate_random_text(3, 6),
+                generate_random_text(6, 12),
+                generate_random_text(5, 10),
+            ]
+            col_widths = [
+                50,
+                self.width - 2 * self.margin - 50 - 100,
+                100,
+            ]
+            rows = []
+            for item in items:
+                desc = generate_random_text(5, 25)
+                qty = item.get("qty", random.randint(1, 5))
+                total = item.get("total", random.randint(20000, 200000))
+                rows.append([f"{qty}", desc, self._format_currency(total)])
+            
+            border_style = random.choice(["full", "no_vertical", "no_horizontal"])
+            self._draw_table_with_borders(
+                headers=table_headers, rows=rows,
+                col_widths=col_widths, font=body_font, header_font=body_font,
+                color=black, border_color=random.choice([black, gray]),
+                draw_vertical_lines=border_style == "full",
+                draw_horizontal_lines=border_style in ("full", "no_vertical"),
+            )
+        else:
+            # === PLAIN LIST (original) ===
+            for item in items:
+                desc = generate_random_text(5, 25)
+                qty = item.get("qty", random.randint(1, 5))
+                total = item.get("total", random.randint(20000, 200000))
 
-            # Separate qty for standalone detection
-            s_qty = f"{qty}"
-            s_rest = f"x {desc}"
-            
-            w_qty, _ = self._text_size(s_qty, body_font)
-            self._draw_text(s_qty, self.margin, self.y_cursor, body_font, black)
-            
-            # Use bigger padding (12px) so they are visibly separate
-            self._draw_text(s_rest, self.margin + w_qty + 12, self.y_cursor, body_font, black)
-            
-            price_str = self._format_currency(total)
-            tw, _ = self._text_size(price_str, body_font)
-            self._draw_text(price_str, self.width - self.margin - tw, self.y_cursor, body_font, black)
-            self._advance_y(font=body_font)
+                s_qty = f"{qty}"
+                s_rest = f"x {desc}"
+                w_qty, _ = self._text_size(s_qty, body_font)
+                self._draw_text(s_qty, self.margin, self.y_cursor, body_font, black)
+                self._draw_text(s_rest, self.margin + w_qty + 12, self.y_cursor, body_font, black)
+                price_str = self._format_currency(total)
+                tw, _ = self._text_size(price_str, body_font)
+                self._draw_text(price_str, self.width - self.margin - tw, self.y_cursor, body_font, black)
+                self._advance_y(font=body_font)
 
         self._advance_y(5)
         self._draw_line(self.y_cursor, style="solid", color=black)
         self._advance_y(10)
+
 
         # === TOTALS ===
         subtotal = data.get("subtotal", sum(item.get("total", 0) for item in items))

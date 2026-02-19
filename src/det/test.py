@@ -14,12 +14,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from model.det.dbnet import DBNetPP
 from src.preprocess.scanner import preprocess_image
 
-
-try:
-    import pyclipper
-    from shapely.geometry import Polygon
-except ImportError:
-    print("Warning: pyclipper or shapely not installed. Post-processing might be limited.")
+import pyclipper
+from shapely.geometry import Polygon
 
 def box_score_fast(bitmap, _box):
     h, w = bitmap.shape[:2]
@@ -135,7 +131,7 @@ def crop_image(img, box):
 
 
 def load_model(model_path, device):
-    model = DBNetPP(backbone='resnet50', pretrained=False)
+    model = DBNetPP(pretrained=False)
     checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     
     # Extract state dict
@@ -170,9 +166,9 @@ def main():
     # Post-processing args
     parser.add_argument('--thresh', type=float, default=0.3, help='Binarization threshold')
     parser.add_argument('--box_thresh', type=float, default=0.6, help='Box score threshold')
-    parser.add_argument('--unclip_ratio', type=float, default=1.6, help='Unclip ratio (increase to merge fragmented text regions)')
+    parser.add_argument('--unclip_ratio', type=float, default=1.5, help='Unclip ratio (increase to merge fragmented text regions)')
     parser.add_argument('--min_area', type=float, default=10, help='Minimum area for text region')
-    parser.add_argument('--preprocess', action='store_true', help='Use AI Document Scanner (U-2-Net) preprocessing')
+    parser.add_argument('--preprocess', action='store_true', help='Use Document Scanner (U-2-Net) preprocessing')
 
     
     args = parser.parse_args()

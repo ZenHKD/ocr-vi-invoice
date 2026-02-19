@@ -217,6 +217,47 @@ class DefectSimulator:
         return Image.fromarray(img_array)
 
     @staticmethod
+    def apply_sand_grain_noise(img: Image.Image, density: float = None,
+                               grain_size: int = None) -> Image.Image:
+        """
+        Simulate sand/grain/speckle noise — clusters of small dark or light dots.
+        This is the main false-positive trigger: the model mistakes these clusters for text.
+        """
+        width, height = img.size
+        img_array = np.array(img).astype(np.float32)
+        
+        if density is None:
+            density = random.uniform(0.005, 0.03)
+        if grain_size is None:
+            grain_size = random.randint(1, 3)
+        
+        num_grains = int(density * width * height)
+        
+        for _ in range(num_grains):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            
+            # Random dark or light grain
+            if random.random() < 0.7:
+                # Dark grain (like sand/dust)
+                color_val = random.uniform(0, 80)
+            else:
+                # Light grain
+                color_val = random.uniform(200, 255)
+            
+            # Draw grain (small square)
+            x_end = min(x + grain_size, width)
+            y_end = min(y + grain_size, height)
+            
+            # Partial alpha blend so it doesn't look too artificial
+            alpha = random.uniform(0.3, 0.9)
+            img_array[y:y_end, x:x_end] = (
+                img_array[y:y_end, x:x_end] * (1 - alpha) + color_val * alpha
+            )
+        
+        return Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
+
+    @staticmethod
     def apply_blur(img: Image.Image, radius: float = 1.0) -> Image.Image:
         """Apply blur (Gaussian or Motion)."""
         if random.random() < 0.7:
@@ -251,6 +292,78 @@ class DefectSimulator:
             except ImportError:
                 # Fallback to Gaussian blur if scipy not available
                 return img.filter(ImageFilter.GaussianBlur(radius=radius))
+
+    @staticmethod
+    def apply_local_blur(img: Image.Image, num_zones: int = None) -> Image.Image:
+        """
+        Apply blur to random horizontal strips (simulates scanner out-of-focus zones).
+        This is the key defect for training the model NOT to merge blurry text lines.
+        """
+        width, height = img.size
+        img_array = np.array(img).astype(np.float32)
+        
+        if num_zones is None:
+            num_zones = random.randint(1, 4)
+        
+        for _ in range(num_zones):
+            # Random horizontal strip
+            strip_height = random.randint(20, max(30, height // 6))
+            y_start = random.randint(0, height - strip_height)
+            y_end = y_start + strip_height
+            
+            # Random blur radius (can be quite strong)
+            radius = random.uniform(1.0, 4.0)
+            
+            # Extract strip, blur, and paste back
+            strip = img.crop((0, y_start, width, y_end))
+            strip = strip.filter(ImageFilter.GaussianBlur(radius=radius))
+            strip_array = np.array(strip).astype(np.float32)
+            
+            # Smooth transition: create gradient mask at edges
+            fade = min(10, strip_height // 4)
+            mask = np.ones(strip_height, dtype=np.float32)
+            for i in range(fade):
+                t = i / fade
+                mask[i] = t
+                mask[strip_height - 1 - i] = t
+            mask = mask[:, np.newaxis, np.newaxis]
+            
+            # Blend
+            img_array[y_start:y_end] = img_array[y_start:y_end] * (1 - mask) + strip_array * mask
+        
+        return Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
+
+    @staticmethod
+    def apply_broken_text(img: Image.Image, num_breaks: int = None) -> Image.Image:
+        """
+        Simulate broken/interrupted printing where thin streaks cut through text.
+        This creates the 'gãy đoạn' (broken text) effect the user described.
+        """
+        width, height = img.size
+        draw = ImageDraw.Draw(img)
+        
+        if num_breaks is None:
+            num_breaks = random.randint(2, 8)
+        
+        bg_color = (255, 255, 255)  # Assume white background
+        
+        for _ in range(num_breaks):
+            # Thin horizontal white lines (1-3 px) cutting through text
+            y = random.randint(0, height - 1)
+            thickness = random.randint(1, 3)
+            
+            # Partial width (not full width to look realistic)
+            x_start = random.randint(0, width // 3)
+            x_end = random.randint(width * 2 // 3, width)
+            
+            # Semi-transparent white streak
+            for dy in range(thickness):
+                if y + dy < height:
+                    for x in range(x_start, x_end):
+                        if random.random() < 0.7:  # Not every pixel
+                            draw.point((x, y + dy), fill=bg_color)
+        
+        return img
 
     
     @staticmethod
@@ -554,9 +667,12 @@ class DefectSimulator:
             (cls.apply_stain, {'intensity': random.uniform(0.1, 0.4)}),
             (cls.apply_crease, {'num_creases': random.randint(1, 3)}),
             (cls.apply_shadow, {'intensity': random.uniform(0.1, 0.5)}),
-            (cls.apply_noise, {'intensity': random.uniform(0.01, 0.04)}),
-            (cls.apply_salt_pepper_noise, {'amount': random.uniform(0.001, 0.005)}),
-            (cls.apply_blur, {'radius': random.uniform(0.5, 1.5)}),
+            (cls.apply_noise, {'intensity': random.uniform(0.02, 0.08)}),
+            (cls.apply_salt_pepper_noise, {'amount': random.uniform(0.002, 0.01)}),
+            (cls.apply_sand_grain_noise, {}),
+            (cls.apply_blur, {'radius': random.uniform(0.5, 3.0)}),
+            (cls.apply_local_blur, {}),
+            (cls.apply_broken_text, {}),
             (cls.apply_brightness_variation, {}),
             (cls.apply_contrast_variation, {}),
             (cls.apply_crumple, {'strength': random.uniform(0.3, 0.7)}),

@@ -39,11 +39,15 @@ def compute_metrics(pred_binary: torch.Tensor, gt: torch.Tensor, mask: torch.Ten
     precision = tp / (tp + fp + eps)
     recall = tp / (tp + fn + eps)
     f1 = 2 * precision * recall / (precision + recall + eps)
+    iou = tp / (tp + fp + fn + eps)
+    dice = 2 * tp / (2 * tp + fp + fn + eps)
     
     return {
         'precision': precision.item(),
         'recall': recall.item(),
-        'f1': f1.item()
+        'f1': f1.item(),
+        'iou': iou.item(),
+        'dice': dice.item(),
     }
 
 
@@ -66,6 +70,8 @@ def validate_epoch(model: nn.Module, dataloader, criterion, device: str) -> Tupl
     all_precision = []
     all_recall = []
     all_f1 = []
+    all_iou = []
+    all_dice = []
     
     with torch.no_grad():
         for batch in tqdm(dataloader, desc='Validation', leave=False):
@@ -96,20 +102,24 @@ def validate_epoch(model: nn.Module, dataloader, criterion, device: str) -> Tupl
             all_precision.append(metrics['precision'])
             all_recall.append(metrics['recall'])
             all_f1.append(metrics['f1'])
+            all_iou.append(metrics['iou'])
+            all_dice.append(metrics['dice'])
     
     # Average metrics
     avg_loss = total_loss / len(dataloader)
     avg_metrics = {
         'precision': np.mean(all_precision),
         'recall': np.mean(all_recall),
-        'f1': np.mean(all_f1)
+        'f1': np.mean(all_f1),
+        'iou': np.mean(all_iou),
+        'dice': np.mean(all_dice),
     }
     
     return avg_loss, avg_metrics
 
 
 def main():
-    """Standalone validation script"""
+    """Standalone validation script."""
     import argparse
     import sys
     import os
@@ -123,9 +133,10 @@ def main():
     
     parser = argparse.ArgumentParser(description='Validate DBNet++ model')
     parser.add_argument('--checkpoint', type=str, required=True, help='Path to model checkpoint')
-    parser.add_argument('--val_dir', type=str, default='data/val_det', help='Validation data directory')
+    parser.add_argument('--val_dir', type=str, default='data/val_det_sroie', help='Validation data directory (SROIE train)')
+    parser.add_argument('--test_dir', type=str, default='data/test_det_sroie', help='Test data directory (SROIE test)')
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size')
-    parser.add_argument('--image_size', type=int, default=640, help='Image size')
+    parser.add_argument('--image_size', type=int, default=960, help='Image size')
     args = parser.parse_args()
     
     # Device
@@ -134,18 +145,18 @@ def main():
     
     # Load model
     model = DBNetPP().to(device)
-    checkpoint = torch.load(args.checkpoint, map_location=device)
+    checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
-    print(f'Loaded checkpoint from {args.checkpoint} (Epoch {checkpoint["epoch"]})')
+    print(f'Loaded checkpoint from {args.checkpoint} (Epoch {checkpoint["epoch"] + 1})')
     
-    # Load data
-    _, val_loader = create_dataloaders(
-        train_dir=args.val_dir,
+    # Load data (3-way split, but we only need val + test)
+    _, val_loader, test_loader = create_dataloaders(
+        train_dir=args.val_dir,  # dummy, not used
         val_dir=args.val_dir,
+        test_dir=args.test_dir,
         batch_size=args.batch_size,
         image_size=args.image_size
     )
-    print(f'Validation samples: {len(val_loader.dataset)}')
     
     # Loss criterion
     criterion = DBLoss()
@@ -154,13 +165,29 @@ def main():
     val_loss, val_metrics = validate_epoch(model, val_loader, criterion, device)
     
     print(f'\n{"="*50}')
-    print(f'Validation Results:')
+    print(f'Validation Results (SROIE train):')
     print(f'{"="*50}')
     print(f'Loss:      {val_loss:.4f}')
     print(f'Precision: {val_metrics["precision"]:.4f}')
     print(f'Recall:    {val_metrics["recall"]:.4f}')
     print(f'F1 Score:  {val_metrics["f1"]:.4f}')
+    print(f'IoU:       {val_metrics["iou"]:.4f}')
+    print(f'Dice:      {val_metrics["dice"]:.4f}')
     print(f'{"="*50}')
+    
+    # Test if available
+    if test_loader:
+        test_loss, test_metrics = validate_epoch(model, test_loader, criterion, device)
+        print(f'\n{"="*50}')
+        print(f'Test Results (SROIE test):')
+        print(f'{"="*50}')
+        print(f'Loss:      {test_loss:.4f}')
+        print(f'Precision: {test_metrics["precision"]:.4f}')
+        print(f'Recall:    {test_metrics["recall"]:.4f}')
+        print(f'F1 Score:  {test_metrics["f1"]:.4f}')
+        print(f'IoU:       {test_metrics["iou"]:.4f}')
+        print(f'Dice:      {test_metrics["dice"]:.4f}')
+        print(f'{"="*50}')
 
 
 if __name__ == '__main__':
