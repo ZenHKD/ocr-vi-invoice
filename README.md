@@ -87,3 +87,5 @@ Layout Types:
 ## Text Recognition
 
 We use the training data from [VietOcr](https://github.com/pbcquoc/vietocr), the data is given by author [see it here](https://drive.google.com/file/d/1T0cmkhTgu3ahyMIwGZeby612RpVdDxOR/view) which contains  601,282 samples of 7 categories: en_00, en_01, InkData_line_processed, meta, random, vi_00, vi_01. The validation set and test set are taken from [MC_OCR 2021](https://www.kaggle.com/datasets/domixi1989/vietnamese-receipts-mc-ocr-2021). We use their text_recognition_train_data.txt as our validation set (5,285 samples) and text_recognition_val_data.txt as test set (1,300 samples).
+
+# Model
