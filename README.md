@@ -53,7 +53,7 @@
 
 ## Text Detection 
 
-We synthetic training set with 12 layouts (12 files in generator/det/layouts) which contains 20,000 images, then use the [MC_OCR 2021](https://www.kaggle.com/datasets/urbikn/sroie-datasetv2) as the validation set and test set (their training set -> our validation set, their test set -> our test set).
+We synthetic training set with 12 layouts (12 files in generator/det/layouts) which contains 20,000 images, then use the [MC_OCR 2021](https://www.kaggle.com/datasets/urbikn/sroie-datasetv2) as the validation set and test set (their training set -> our validation set (626 samples), their test set -> our test set (347 samples)).
 
 We use this command to synthetic:
 ```bash
