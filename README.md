@@ -10,7 +10,7 @@
 │       ├── layouts/             # 12 layouts + 1 base layout files
 │       └── run.py
 ├── model                       # Model Architecture
-│   ├── det                     # DBNet++ (Text Detection)
+│   ├── det                     # DBNet++ (Text Detection) (pre-trained ResNet-50-dcn in backbone)
 │   │   ├── backbone.py
 │   │   ├── dbnet.py
 │   │   ├── dcn.py
@@ -18,10 +18,9 @@
 │   │   ├── layers.py
 │   │   ├── loss.py
 │   │   ├── neck.py
-│   └── rec                     # SVTRv2 (Text Recognition)
+│   └── rec2                     # SVTRv2 (Text Recognition) (simplified version, trained from scratch)
 │       ├── loss.py
-│       ├── svtr_ctc.py
-│       ├── svtr_encoder.py
+│       ├── svtrv2.py
 │       ├── tokenizer.py
 │       └── vocab.py
 ├── READ.md
@@ -32,7 +31,7 @@
 │   │   ├── test.py
 │   │   ├── train.py
 │   │   └── val.py
-│   ├── preprocess              # Using U-2-Net (pre-trained) to remove background
+│   ├── preprocess              # Using U-2-Net (pre-trained) to remove background (use directly from `rembg`)
 │   │   ├── scanner.ipynb
 │   │   └── scanner.py
 │   └── rec2
@@ -45,8 +44,10 @@
     │   ├── best_model.pth
     │   ├── checkpoint_epoch_*.pth
     │   └── training_log.csv
-    └── rec2_aug
-
+    ├── rec2_aug
+    │   ├── best_model.pth
+    │   ├── checkpoint_epoch_*.pth
+    │   └── training_log.csv
 ```
 
 # Data preparation

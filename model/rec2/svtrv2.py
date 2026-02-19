@@ -19,8 +19,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.rec.tokenizer import Tokenizer
-from model.rec.vocab import VOCAB
+from model.rec2.tokenizer import Tokenizer
+from model.rec2.vocab import VOCAB
 
 
 # ──────────────────────────── Building Blocks ────────────────────────────
