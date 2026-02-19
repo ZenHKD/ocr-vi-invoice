@@ -52,6 +52,18 @@ def load_detection_model(model_path: str, device: str):
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
+
+    # Print checkpoint info
+    epoch = checkpoint.get('epoch', '?')
+    best_f1 = checkpoint.get('best_f1', '?')
+    val_metrics = checkpoint.get('val_metrics', {})
+    print(f'  Loaded epoch {epoch}, best F1: {best_f1}')
+    if val_metrics:
+        print(f'  Val metrics: P={val_metrics.get("precision", "?"):.4f} '
+              f'R={val_metrics.get("recall", "?"):.4f} '
+              f'F1={val_metrics.get("f1", "?"):.4f} '
+              f'IoU={val_metrics.get("iou", "?"):.4f}')
+
     return model
 
 
@@ -72,7 +84,8 @@ def load_recognition_model(model_path: str, device: str, variant: str = 'base'):
     variant_info = checkpoint.get('variant', variant)
     epoch = checkpoint.get('epoch', '?')
     best_acc = checkpoint.get('best_acc', '?')
-    print(f"  SVTRv2-{variant_info} loaded (epoch {epoch}, best_acc={best_acc})")
+    best_cer = checkpoint.get('val_metrics', {}).get('cer', '?')
+    print(f"  SVTRv2-{variant_info} loaded (epoch {epoch}, best_acc={best_acc}, best_cer={best_cer})")
     return model
 
 
