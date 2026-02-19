@@ -7,7 +7,7 @@
 │       ├── edge_cases.py
 │       ├── generator.py
 │       ├── geometry.py
-│       ├── layouts             # 12 layouts + 1 base layout files
+│       ├── layouts/             # 12 layouts + 1 base layout files
 │       └── run.py
 ├── model                       # Model Architecture
 │   ├── det                     # DBNet++ (Text Detection)
@@ -48,3 +48,41 @@
     └── rec2_aug
 
 ```
+
+# Data preparation
+
+## Text Detection 
+
+We synthetic training set with 12 layouts (12 files in generator/det/layouts) which contains 20,000 images, then use the [MC_OCR 2021](https://www.kaggle.com/datasets/urbikn/sroie-datasetv2) as the validation set and test set (their training set -> our validation set, their test set -> our test set).
+
+We use this command to synthetic:
+```bash
+python -m generator.det.run --num 20000 --scenario training_hard --output data/train_det
+```
+
+The result is:
+```
+Sample Types:
+    blank: 1630 (8.2%)
+    edge_case: 7041 (35.2%)
+    realistic: 9909 (49.5%)
+    unreadable: 1420 (7.1%)
+
+Layout Types:
+    cafe_minimal: 1496 (7.5%)
+    delivery_receipt: 1563 (7.8%)
+    ecommerce_receipt: 1268 (6.3%)
+    formal_vat: 1214 (6.1%)
+    handwritten: 1296 (6.5%)
+    hotel_bill: 1287 (6.4%)
+    modern_pos: 1437 (7.2%)
+    restaurant_bill: 1588 (7.9%)
+    supermarket_thermal: 2309 (11.5%)
+    taxi_receipt: 941 (4.7%)
+    traditional_market: 1299 (6.5%)
+    utility_bill: 1252 (6.3%)
+```
+
+## Text Recognition
+
+We use the training data from [VietOcr](https://github.com/pbcquoc/vietocr), the data is given by author [see it here](https://drive.google.com/file/d/1T0cmkhTgu3ahyMIwGZeby612RpVdDxOR/view) which contains  601,282 samples of 7 categories: en_00, en_01, InkData_line_processed, meta, random, vi_00, vi_01. The validation set and test set are taken from [MC_OCR 2021](https://www.kaggle.com/datasets/domixi1989/vietnamese-receipts-mc-ocr-2021). We use their text_recognition_train_data.txt as our validation set (5,285 samples) and text_recognition_val_data.txt as test set (1,300 samples).
