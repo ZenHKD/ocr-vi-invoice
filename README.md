@@ -4,12 +4,11 @@
 │   ├── test/                   # Test images copy from `data/archive/val_images/val_images`
 |   ├── archive/                # MC_OCR 2021 data
 |   ├── SROIE2019/              # SROIE data
-|   ├── test/
-|   ├── test_det_sroie/
-|   ├── train_det/
-|   ├── train_rec/
-|   ├── val_det_sroie/
-|   ├── val_rec/
+|   ├── test_det_sroie/         # Test set of SROIE with json annotation 
+|   ├── train_det/              # 20,000 synthetic samples with json annotation 
+|   ├── train_rec/              # All samples in `data/vietocr` with json annotation 
+|   ├── val_det_sroie/          # Training set of SROIE with json annotation 
+|   ├── val_rec/                # Training set of text recognition of MC_OCR 2021 with json annotation 
 |   ├── vietocr                 # VietOCR data
 |   |   ├── en_00
 |   |   ├── en_01
