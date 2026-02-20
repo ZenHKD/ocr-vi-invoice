@@ -273,7 +273,7 @@ def create_dataloaders(
     val_img_dir: str = 'data/archive/text_recognition_mcocr_data/text_recognition_mcocr_data',
     # MCOCR test data
     test_annotation: Optional[str] = 'data/archive/text_recognition_val_data.txt',
-    test_img_dir: Optional[str] = None,
+    test_img_dir: Optional[str] = None, # Same dir with val_img_dir
     # Common
     batch_size: int = 64,
     img_size: Tuple[int, int] = (32, 256),
