@@ -1,6 +1,24 @@
 ```
 .
 ├── data
+│   ├── test/                   # Test images copy from `data/archive/val_images/val_images`
+|   ├── archive/                # MC_OCR 2021 data
+|   ├── SROIE2019/              # SROIE data
+|   ├── test/
+|   ├── test_det_sroie/
+|   ├── train_det/
+|   ├── train_rec/
+|   ├── val_det_sroie/
+|   ├── val_rec/
+|   ├── vietocr                 # VietOCR data
+|   |   ├── en_00
+|   |   ├── en_01
+|   |   ├── InkData_line_processed
+|   |   ├── meta
+|   |   ├── random
+|   |   ├── vi_00
+|   |   └──vi_01
+|   └── vinh/                   # Folder to save some images take from realife 
 ├── generator
 │   └── det
 │       ├── defects.py
