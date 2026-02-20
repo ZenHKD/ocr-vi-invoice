@@ -64,9 +64,6 @@ class DefectSimulator:
     @staticmethod
     def apply_crease(img: Image.Image, num_creases: int = 1) -> Image.Image:
         """Apply fold/crease effect with visible shadow and highlight."""
-        import random
-        import math
-        
         img_array = np.array(img).astype(float)
         height, width = img_array.shape[:2]
         
@@ -384,19 +381,8 @@ class DefectSimulator:
         
     @staticmethod
     def apply_toner_loss(img: Image.Image, strength: float = 0.5) -> Image.Image:
-        """Simulate running out of ink/toner (fading strips)."""
+        """Simulate running out of ink/toner (fading regions via Perlin-ish noise)."""
         width, height = img.size
-        mask = Image.new('L', (width, height), 255)
-        draw = ImageDraw.Draw(mask)
-        
-        # Vertical strips of fading
-        num_strips = random.randint(3, 8)
-        for _ in range(num_strips):
-            x = random.randint(0, width)
-            w = random.randint(10, 100)
-            pass
-            
-        # Simpler implementation: Perlin-ish noise for uneven toner
         img_array = np.array(img).astype(float)
         
         # Generate low freq noise
@@ -500,9 +486,6 @@ class DefectSimulator:
         Returns:
             PIL Image with torn edge effect
         """
-        import random
-        import math
-
         width, height = img.size
         img_array = np.array(img).copy()
 

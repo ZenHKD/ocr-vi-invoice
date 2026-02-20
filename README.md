@@ -21,7 +21,6 @@
 │       ├── defects.py
 │       ├── edge_cases.py
 │       ├── generator.py
-│       ├── geometry.py
 │       ├── layouts/            # 12 layouts + 1 base layout files
 │       └── run.py
 ├── model                       # Model Architecture

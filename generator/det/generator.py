@@ -14,7 +14,7 @@ import random
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
+from typing import Dict
 from enum import Enum
 from pathlib import Path
 from PIL import Image
@@ -55,25 +55,8 @@ class GenerationConfig:
     max_jpeg_quality: int = 95
     defect_level: str = "mixed"
 
-    # Layout preferences (weights)
+    # Layout preferences (weights) — leave empty to use LayoutFactory defaults
     layout_weights: Dict[LayoutType, float] = field(default_factory=dict)
-
-    def __post_init__(self):
-        if not self.layout_weights:
-            self.layout_weights = {
-                LayoutType.SUPERMARKET_THERMAL: 0.15,
-                LayoutType.FORMAL_VAT: 0.08,
-                LayoutType.HANDWRITTEN: 0.08,
-                LayoutType.CAFE_MINIMAL: 0.10,
-                LayoutType.RESTAURANT_BILL: 0.10,
-                LayoutType.MODERN_POS: 0.09,
-                LayoutType.TRADITIONAL_MARKET: 0.08,
-                LayoutType.DELIVERY_RECEIPT: 0.10,
-                LayoutType.HOTEL_BILL: 0.08,
-                LayoutType.UTILITY_BILL: 0.08,
-                LayoutType.ECOMMERCE_RECEIPT: 0.08,
-                LayoutType.TAXI_RECEIPT: 0.06,
-            }
 
 
 def get_scenario_config(scenario: GenerationScenario) -> GenerationConfig:
@@ -126,6 +109,16 @@ def get_scenario_config(scenario: GenerationScenario) -> GenerationConfig:
              realistic_ratio=0.95,
              edge_case_ratio=0.05,
              layout_weights={LayoutType.FORMAL_VAT: 1.0}
+        ),
+        GenerationScenario.PURE_RANDOM_FOCUS: GenerationConfig(
+            realistic_ratio=0.90,
+            edge_case_ratio=0.10,
+            defect_level="light"
+        ),
+        GenerationScenario.PSEUDO_FOCUS: GenerationConfig(
+            realistic_ratio=0.90,
+            edge_case_ratio=0.10,
+            defect_level="light"
         ),
     }
 

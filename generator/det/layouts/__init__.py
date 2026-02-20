@@ -1,7 +1,7 @@
 """
 Layout modules for invoice generation with randomized text.
 
-All layouts use vocabulary from model.rec.vocab for text generation.
+All layouts use vocabulary from model.rec2.vocab for text generation.
 """
 
 from .base_layout import (
@@ -66,7 +66,7 @@ class LayoutFactory:
     @classmethod
     def create_random(cls, weights: Dict[LayoutType, float] = None) -> BaseLayout:
         """Create a random layout with optional weights."""
-        if weights is None:
+        if not weights:
             weights = {
                 LayoutType.SUPERMARKET_THERMAL: 0.12,
                 LayoutType.FORMAL_VAT: 0.08,

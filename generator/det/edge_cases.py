@@ -3,21 +3,16 @@ Edge Cases Generator for unusual/difficult invoice scenarios.
 
 Provides:
     - Partial scans (cropped, cut-off)
-    - Multi-receipt composites (multiple receipts on one scan)
     - Extreme rotations and angles
     - Blank pages with artifacts
-    - Unreadable/corrupted images
-    - Overlapping documents
-    - Mixed orientation receipts
     - Receipt on textured backgrounds
-    - Photos of receipts (not scans)
 """
 
 import random
+import math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 from typing import List, Dict, Tuple
-from .geometry import rotate_point
 
 
 class EdgeCaseGenerator:
@@ -112,11 +107,12 @@ class EdgeCaseGenerator:
             polygon = ann['polygon']
             new_polygon = []
             for x, y in polygon:
-                # Rotate point around center
-                x_rot, y_rot = rotate_point((x, y), center, angle)
-                # Add offset for expanded canvas
-                x_rot += offset_x
-                y_rot += offset_y
+                # Rotate point around center (negate angle for image coords)
+                angle_pt = math.radians(-angle)
+                cos_a, sin_a = math.cos(angle_pt), math.sin(angle_pt)
+                cx, cy = center
+                x_rot = (x - cx) * cos_a - (y - cy) * sin_a + cx + offset_x
+                y_rot = (x - cx) * sin_a + (y - cy) * cos_a + cy + offset_y
                 new_polygon.append([int(x_rot), int(y_rot)])
             
             new_annotations.append({
@@ -125,73 +121,6 @@ class EdgeCaseGenerator:
             })
         
         return rotated, new_annotations
-
-    @staticmethod
-    def create_multi_receipt_composite(imgs_with_annotations: List[Tuple[Image.Image, List[Dict]]],
-                                      num_receipts: int = 2) -> Tuple[Image.Image, List[Dict]]:
-        """
-        Combine multiple receipts into one image (side by side or overlapping).
-        
-        Args:
-            imgs_with_annotations: List of (image, annotations) tuples
-            num_receipts: Number of receipts to combine (2-3)
-            
-        Returns:
-            Composite image and combined annotations
-        """
-        num_receipts = min(num_receipts, len(imgs_with_annotations))
-        selected = random.sample(imgs_with_annotations, num_receipts)
-        
-        if num_receipts == 2:
-            # Side by side
-            img1, ann1 = selected[0]
-            img2, ann2 = selected[1]
-            
-            # Resize to similar heights
-            target_height = min(img1.height, img2.height)
-            img1 = img1.resize((int(img1.width * target_height / img1.height), target_height))
-            img2 = img2.resize((int(img2.width * target_height / img2.height), target_height))
-            
-            # Create composite
-            gap = random.randint(20, 50)
-            composite_width = img1.width + gap + img2.width
-            composite = Image.new('RGB', (composite_width, target_height), (255, 255, 255))
-            composite.paste(img1, (0, 0))
-            composite.paste(img2, (img1.width + gap, 0))
-            
-            # Adjust annotations for img2
-            combined_annotations = ann1.copy()
-            for ann in ann2:
-                new_polygon = [[x + img1.width + gap, y] for x, y in ann['polygon']]
-                combined_annotations.append({
-                    'text': ann['text'],
-                    'polygon': new_polygon
-                })
-            
-            return composite, combined_annotations
-        else:
-            # Simple stacking for 3+ receipts
-            total_height = sum(img.height for img, _ in selected) + (num_receipts - 1) * 30
-            max_width = max(img.width for img, _ in selected)
-            
-            composite = Image.new('RGB', (max_width, total_height), (255, 255, 255))
-            combined_annotations = []
-            y_offset = 0
-            
-            for img, ann in selected:
-                composite.paste(img, (0, y_offset))
-                
-                # Adjust annotations
-                for a in ann:
-                    new_polygon = [[x, y + y_offset] for x, y in a['polygon']]
-                    combined_annotations.append({
-                        'text': a['text'],
-                        'polygon': new_polygon
-                    })
-                
-                y_offset += img.height + 30
-            
-            return composite, combined_annotations
 
     @staticmethod
     def create_textured_background(img: Image.Image, annotations: List[Dict]) -> Tuple[Image.Image, List[Dict]]:
