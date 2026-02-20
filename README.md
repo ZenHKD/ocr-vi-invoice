@@ -6,17 +6,15 @@
 |   ├── SROIE2019/              # SROIE data
 |   ├── test_det_sroie/         # Test set of SROIE with json annotation 
 |   ├── train_det/              # 20,000 synthetic samples with json annotation 
-|   ├── train_rec/              # All samples in `data/vietocr` with json annotation 
 |   ├── val_det_sroie/          # Training set of SROIE with json annotation 
-|   ├── val_rec/                # Training set of text recognition of MC_OCR 2021 with json annotation 
 |   ├── vietocr                 # VietOCR data
-|   |   ├── en_00
-|   |   ├── en_01
-|   |   ├── InkData_line_processed
-|   |   ├── meta
-|   |   ├── random
-|   |   ├── vi_00
-|   |   └── vi_01
+|   |   ├── en_00/
+|   |   ├── en_01/
+|   |   ├── InkData_line_processed/
+|   |   ├── meta/
+|   |   ├── random/
+|   |   ├── vi_00/
+|   |   └── vi_01/
 |   └── vinh/                   # Folder to save some images take from real life 
 ├── generator
 │   └── det

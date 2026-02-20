@@ -27,8 +27,8 @@ import albumentations as A
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from model.rec.tokenizer import Tokenizer
-from model.rec.vocab import VOCAB
+from model.rec2.tokenizer import Tokenizer
+from model.rec2.vocab import VOCAB
 
 
 def get_train_augmentation():
