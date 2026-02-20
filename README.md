@@ -17,7 +17,7 @@
 |   |   ├── meta
 |   |   ├── random
 |   |   ├── vi_00
-|   |   └──vi_01
+|   |   └── vi_01
 |   └── vinh/                   # Folder to save some images take from realife 
 ├── generator
 │   └── det
@@ -35,7 +35,7 @@
 │   │   ├── head.py
 │   │   ├── layers.py
 │   │   ├── loss.py
-│   │   ├── neck.py
+│   │   └── neck.py
 │   └── rec2                    # SVTRv2 (Text Recognition) (simplified version, trained from scratch)
 │       ├── loss.py
 │       ├── svtrv2.py

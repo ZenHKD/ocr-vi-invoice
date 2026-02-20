@@ -11,4 +11,4 @@ weights/rec_aug/checkpoint_epoch_*.pth
 tests/*
 
 !tests/layouts_grid_view.png
-
+!tests/test_model.py
