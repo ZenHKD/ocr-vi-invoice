@@ -211,8 +211,8 @@ def main():
     # Detection params
     parser.add_argument('--det_size', type=int, default=960)
     parser.add_argument('--det_thresh', type=float, default=0.3)
-    parser.add_argument('--det_box_thresh', type=float, default=0.6)
-    parser.add_argument('--det_unclip_ratio', type=float, default=1.5)
+    parser.add_argument('--det_box_thresh', type=float, default=0.5)
+    parser.add_argument('--det_unclip_ratio', type=float, default=1.6)
     parser.add_argument('--det_min_area', type=float, default=10)
 
     # Recognition params

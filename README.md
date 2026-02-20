@@ -7,7 +7,7 @@
 │       ├── edge_cases.py
 │       ├── generator.py
 │       ├── geometry.py
-│       ├── layouts/             # 12 layouts + 1 base layout files
+│       ├── layouts/            # 12 layouts + 1 base layout files
 │       └── run.py
 ├── model                       # Model Architecture
 │   ├── det                     # DBNet++ (Text Detection) (pre-trained ResNet-50-dcn in backbone)
@@ -18,7 +18,7 @@
 │   │   ├── layers.py
 │   │   ├── loss.py
 │   │   ├── neck.py
-│   └── rec2                     # SVTRv2 (Text Recognition) (simplified version, trained from scratch)
+│   └── rec2                    # SVTRv2 (Text Recognition) (simplified version, trained from scratch)
 │       ├── loss.py
 │       ├── svtrv2.py
 │       ├── tokenizer.py
