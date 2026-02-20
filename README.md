@@ -18,7 +18,7 @@
 |   |   ├── random
 |   |   ├── vi_00
 |   |   └── vi_01
-|   └── vinh/                   # Folder to save some images take from realife 
+|   └── vinh/                   # Folder to save some images take from real life 
 ├── generator
 │   └── det
 │       ├── defects.py
