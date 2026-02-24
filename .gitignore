@@ -1,6 +1,7 @@
 **__pycache__**
 
 data/test/*
+data/train_det/*
 
 weights/det/best_model.pth
 weights/det/checkpoint_epoch_*.pth
@@ -11,4 +12,5 @@ weights/rec2_aug/checkpoint_epoch_*.pth
 tests/*
 
 !tests/layouts_grid_view.png
+!tests/det_annotations_grid.png
 !tests/test_model.py
