@@ -2,6 +2,7 @@
 
 data/test/*
 data/train_det/*
+data/vinh/*
 
 weights/det/best_model.pth
 weights/det/checkpoint_epoch_*.pth

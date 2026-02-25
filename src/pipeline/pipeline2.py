@@ -174,18 +174,23 @@ def draw_boxes_with_text(image: np.ndarray, boxes: List[np.ndarray],
                          texts: List[str], color=(0, 255, 0)) -> np.ndarray:
     """Draw detected boxes with numbered labels."""
     viz_img = image.copy()
+    h, w = image.shape[:2]
+
+    # Scale font relative to image size 
+    font_scale = max(w, h) / 1500.0
+    thickness  = max(2, int(font_scale * 2))
 
     for idx, (box, text) in enumerate(zip(boxes, texts)):
         cv2.drawContours(viz_img, [box.astype(np.int32)], -1, color, 2)
 
         top_point = tuple(box[box[:, 1].argmin()])
-        text_pos = (int(top_point[0]), int(top_point[1]) - 10)
+        text_pos  = (int(top_point[0]), int(top_point[1]) - 10)
 
         if text_pos[1] < 20:
             text_pos = (text_pos[0], int(box[:, 1].max()) + 20)
 
         cv2.putText(viz_img, str(idx + 1), text_pos,
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 0, 0), thickness)
 
     return viz_img
 
