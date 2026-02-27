@@ -3,12 +3,17 @@
 data/test/*
 data/train_det/*
 data/vinh/*
+data/*.png
 
 weights/det/best_model.pth
 weights/det/checkpoint_epoch_*.pth
 
+weights/rec2/best_model.pth
+weights/rec2/checkpoint_epoch_*.pth
+
 weights/rec2_aug/best_model.pth
 weights/rec2_aug/checkpoint_epoch_*.pth
+weights/rec2_aug/*.png
 
 tests/*
 

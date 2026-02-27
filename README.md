@@ -105,6 +105,10 @@ Layout Types:
     utility_bill: 1252 (6.3%)
 ```
 
+12 samples of synthetic data:
+
+![](tests/det_annotations_grid.png)
+
 ## Text Recognition
 
 We use the training data from [VietOcr](https://github.com/pbcquoc/vietocr), the data is given by author [see it here](https://drive.google.com/file/d/1T0cmkhTgu3ahyMIwGZeby612RpVdDxOR/view) which contains  601,282 samples of 7 categories: en_00, en_01, InkData_line_processed, meta, random, vi_00, vi_01. The validation set and test set are taken from [MC_OCR 2021](https://www.kaggle.com/datasets/domixi1989/vietnamese-receipts-mc-ocr-2021). We use their text_recognition_train_data.txt as our validation set (5,285 samples) and text_recognition_val_data.txt as test set (1,300 samples).
@@ -136,6 +140,10 @@ Dice:      0.7659
 ==================================================
 ```
 
+A sample result:
+
+![](tests/output2.png)
+
 ## Text Recognition (SVTRv2-base) (self-implement, simplified version)
 
 At the begining, the model was trained with 30 epochs (see in `weights/rec2/training_log.csv`) with no augmentation (no function `def get_train_augmentation()` in `src/rec2/dataloader`). The best result was at epoch 25.
@@ -145,5 +153,9 @@ Then, load the best_model.pth from `weghts/rec2` to continue fine-tuning with au
 Test result for the test set:
 
 ```
-Test Loss: 1.0536 | Test CER: 0.1626 | Test Accuracy: 0.2431
+Test Loss: 1.0536 | Test CER: 0.1136 | Test Accuracy: 0.3869
 ```
+
+A sample result:
+
+![](tests/compare.png)
