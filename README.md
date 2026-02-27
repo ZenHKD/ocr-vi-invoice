@@ -1,3 +1,6 @@
+# Repository structure
+---
+
 ```
 .
 ├── data
@@ -72,6 +75,7 @@
 ```
 
 # Data preparation
+---
 
 ## Text Detection 
 
@@ -115,6 +119,7 @@ We use the training data from [VietOcr](https://github.com/pbcquoc/vietocr), the
 
 
 # Model & Trainning Strategy
+---
 
 ## Preprocess (U-2 Net)
 
