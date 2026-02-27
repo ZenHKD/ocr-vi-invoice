@@ -20,3 +20,5 @@ tests/*
 !tests/layouts_grid_view.png
 !tests/det_annotations_grid.png
 !tests/test_model.py
+!tests/output2.png
+!tests/compare.png
